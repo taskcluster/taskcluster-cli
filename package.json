@@ -1,0 +1,21 @@
+{
+  "name": "taskcluster-cli",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "debug": "^1.0.4",
+    "promise": "^5.0.0",
+    "slugid": "^1.0.1",
+    "taskcluster-logstream": "^0.1.3",
+    "taskcluster-task-factory": "^0.6.1"
+  },
+  "devDependencies": {
+    "debug": "^1.0.4"
+  }
+}
