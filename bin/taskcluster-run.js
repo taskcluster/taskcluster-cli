@@ -1,3 +1,4 @@
+var program = require('commander');
 var taskcluster = require('taskcluster-client');
 var slugid = require('slugid');
 var debug = require('debug')('taskcluster-client');
@@ -11,8 +12,24 @@ var TaskFactory = require('taskcluster-task-factory/task');
 var queueEvents = new (require('taskcluster-client').QueueEvents);
 var schedulerEvents = new (require('taskcluster-client').SchedulerEvents);
 var queue = new taskcluster.Queue();
-var image = process.argv[2];
-var commands = process.argv.slice(3);
+
+program
+  .usage('-i <image> [options] <cmd>')
+  .option('-i, --image <image>', 'Docker container to execute task in.')
+  .parse(process.argv);
+
+program.on('--help', function() {
+  console.log('  Examples:');
+  console.log('    $ node --harmony taskcluster-run.js -i ubuntu:14.04 ls /');
+});
+
+if (program.args.length == 0 || !program.image) {
+  program.help();
+  process.exit(1);
+} else {
+  var commands = program.args.slice(0);
+  var image = program.image
+}
 
 var LOG_NAME = 'public/logs/terminal_live.log';
 
