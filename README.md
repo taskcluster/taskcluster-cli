@@ -5,12 +5,10 @@ tasks submitted to taskcluster.
 
 # Requirements
 
- - node 0.11x or greater
+ - node 0.10.30 or greater
 
 # Installation
-1. Clone a copy of this repo
-2. Run `npm install <path to repo>` to install taskcluster-cli and required dependencies.
-3. If not installing globally, add the node_modules/.bin path to your shell.
+1. Run `npm install -g taskcluster-cli` to install taskcluster-cli and required dependencies.
 
 # Configuration
 
