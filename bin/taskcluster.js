@@ -24,14 +24,10 @@ if (allowedCommands.indexOf(command) == -1) {
   process.exit(1);
 }
 
-var dir = path.dirname(argv['$0']);
 var bin = argv['$0'] + '-' + argv._[0];
-
-
 var args = process.argv.slice(3);
-args.unshift(bin);
 
-var proc = spawn('node', args, {stdio: 'inherit', customFds: [0,1,2] });
+var proc = spawn(bin, args, {stdio: 'inherit', customFds: [0,1,2] });
 
 proc.on('error', function(err){
   if (err.code == "ENOENT") {
