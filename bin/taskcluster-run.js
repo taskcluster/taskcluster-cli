@@ -16,7 +16,7 @@ var listener;
 var taskComplete = false;
 
 var LOG_NAME = 'public/logs/terminal_live.log';
-var taskOwner = process.env.TASKCLUSTER_TASK_OWNER;
+var taskOwner = process.env.TASKCLUSTER_TASK_OWNER || process.env.EMAIL;
 
 var yargs = require('yargs')
   .usage('Run a task within the task cluster')
@@ -40,7 +40,7 @@ if(args._.length < 2) {
 }
 
 if(!taskOwner) {
-  console.error('Error: TASKCLUSTER_TASK_OWNER not specified\n');
+  console.error('Error: TASKCLUSTER_TASK_OWNER environment variable not configured.\n');
   console.log(yargs.help());
   process.exit(1);
 }
