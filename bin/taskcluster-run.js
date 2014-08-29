@@ -112,6 +112,7 @@ function handleEvent(message) {
         taskComplete = true;
         result = 'Task Failed';
       }
+      console.log(result);
       debug("Message: %j", message);
   }
 }
