@@ -58,9 +58,13 @@ if (args.envFile) {
   }
 }
 if (args.env) {
-  var cli_envs = dotenv.parse(args.env.join('\n'));
-  for (var env_name in cli_envs) {
-    env[env_name] = cli_envs[env_name];
+  var cli_envs = args.env;
+  if (args.env instanceof Array) {
+    cli_envs = args.env.join('\n');
+  }
+  var parsed_envs = dotenv.parse(cli_envs);
+  for (var env_name in parsed_envs) {
+    env[env_name] = parsed_envs[env_name];
   }
 }
 
