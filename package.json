@@ -9,13 +9,12 @@
   "author": "",
   "license": "ISC",
   "bin": {
-    "taskcluster": "./bin/taskcluster.js",
-    "taskcluster-run": "./bin/taskcluster-run.js"
+    "taskcluster": "bin/taskcluster.js",
+    "taskcluster-run": "bin/taskcluster-run.js"
   },
   "dependencies": {
     "debug": "^1.0.4",
     "dotenv": "^0.4.0",
-    "lodash": "^2.4.1",
     "promise": "^5.0.0",
     "slugid": "^1.0.1",
     "taskcluster-client": "^0.15.1",

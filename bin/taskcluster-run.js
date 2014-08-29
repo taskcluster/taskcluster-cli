@@ -2,7 +2,6 @@ var fs = require('fs');
 var Promise = require('promise');
 var slugid = require('slugid');
 var dotenv = require('dotenv');
-var _ = require('lodash');
 
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
@@ -49,18 +48,18 @@ if(!taskOwner) {
 // Command line arguments should take precedence over those listed in the env file.
 // Allows selective overwriting of env variables
 var env = {};
-if (args.env) {
-  var joinedEnvs = args.env.join('\n')
-  env = dotenv.parse(joinedEnvs);
-}
-
 if (args.envFile) {
   if (fs.existsSync(args.envFile)) {
-    var file = fs.readFileSync(args.envFile);
-    env = _.defaults(env, dotenv.parse(file));
+    env = dotenv.parse(fs.readFileSync(args.envFile));
   } else {
     console.error('Environment file does not exist at the location provided.');
     process.exit(1);
+  }
+}
+if (args.env) {
+  var cli_envs = dotenv.parse(args.env.join('\n'));
+  for (var env_name in cli_envs) {
+    env[env_name] = cli_envs[env_name];
   }
 }
 
