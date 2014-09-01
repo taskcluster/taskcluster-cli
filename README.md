@@ -1,5 +1,4 @@
 # taskcluster-cli
-that you'd normally have to do by hand. There are tasks that are common
 Taskcluster CLI is a command line interface for creating and managing 
 tasks submitted to taskcluster.
 
