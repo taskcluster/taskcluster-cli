@@ -3,11 +3,14 @@ var fs = require('fs');
 var Promise = require('promise');
 var slugid = require('slugid');
 var dotenv = require('dotenv');
+var readLog = require('../lib/read_log');
 
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
 var TaskFactory = require('taskcluster-task-factory/task');
 var LogStream = require('taskcluster-logstream');
+var Promise = require('promise');
+var URL = require('url');
 
 var Listener = taskcluster.Listener;
 var queueEvents = new taskcluster.QueueEvents;
@@ -16,7 +19,7 @@ var queue = new taskcluster.Queue();
 var listener;
 var taskComplete = false;
 
-var LOG_NAME = 'public/logs/terminal_live.log';
+var LOG_NAME = 'public/logs/live.log';
 var taskOwner = process.env.TASKCLUSTER_TASK_OWNER || process.env.EMAIL;
 
 var yargs = require('yargs')
@@ -76,13 +79,20 @@ function endWhenTasksComplete(stream) {
   }
 }
 
+var showingLog = false;
 function displayLog(taskId, runId) {
-  var signedUrl = queue.buildSignedUrl(
-      queue.getArtifact, taskId, runId, LOG_NAME, {expiration: 60 * 100}
-  );
-  var stream = new LogStream(signedUrl);
-  stream.pipe(process.stdout);
-  endWhenTasksComplete(stream);
+  // The live log url is updated frequently as we update it from the live log
+  // endpoint to the actual backing file on s3. We only care about it the first
+  // time we log it.
+  if (showingLog) return
+  var url = queue.buildUrl(queue.getArtifact, taskId, runId, LOG_NAME);
+
+  return readLog(url).then(function(stream) {
+    stream.pipe(process.stdout);
+    endWhenTasksComplete(stream);
+  }).catch(function(err) {
+    console.error("Could not open stream: ", err)
+  });
 }
 
 function handleEvent(message) {
@@ -95,7 +105,11 @@ function handleEvent(message) {
       console.log("Task Created.\nTask ID: %s\nTask State: Pending", taskId);
       break;
     case 'running':
-      if (message.exchange.indexOf('artifact-created') > -1 && payload.artifact.name == LOG_NAME) {
+      console.log(payload.artifact && payload.artifact.name == LOG_NAME);
+      if (
+        message.exchange.indexOf('artifact-created') > -1 &&
+        payload.artifact.name == LOG_NAME
+      ) {
         displayLog(taskId, runId);
       }
       break;
