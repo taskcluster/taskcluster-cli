@@ -39,8 +39,11 @@ if(args._.length < 2) {
   console.log(yargs.help());
   process.exit(1);
 } else {
+  // Docker image.
   var image = args._[0];
-  var command = ['/bin/bash', '-cvex'].concat(args._.slice(1));
+  // Arguments for docker cmd (note that we do not specify a shell here very
+  // similar to how docker run does not specify a default shell for commands)
+  var command = args._.slice(1);
 }
 
 if(!taskOwner) {
@@ -105,7 +108,6 @@ function handleEvent(message) {
       console.log("Task Created.\nTask ID: %s\nTask State: Pending", taskId);
       break;
     case 'running':
-      console.log(payload.artifact && payload.artifact.name == LOG_NAME);
       if (
         message.exchange.indexOf('artifact-created') > -1 &&
         payload.artifact.name == LOG_NAME
