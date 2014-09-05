@@ -153,7 +153,7 @@ function buildTaskRequest(taskId) {
         'image': image,
         'command': command,
         'env': env,
-        'maxRunTime': 600
+        'maxRunTime': 7200 // two hours...
       },
       'metadata': {
         'owner': taskOwner,
