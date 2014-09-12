@@ -3,11 +3,13 @@ var fs = require('fs');
 var Promise = require('promise');
 var slugid = require('slugid');
 var dotenv = require('dotenv');
+var readLog = require('../lib/read_log');
 
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
 var TaskFactory = require('taskcluster-task-factory/task');
 var LogStream = require('taskcluster-logstream');
+var Promise = require('promise');
 
 var Listener = taskcluster.Listener;
 var queueEvents = new taskcluster.QueueEvents;
@@ -16,7 +18,7 @@ var queue = new taskcluster.Queue();
 var listener;
 var taskComplete = false;
 
-var LOG_NAME = 'public/logs/terminal_live.log';
+var LOG_NAME = 'public/logs/live.log';
 var taskOwner = process.env.TASKCLUSTER_TASK_OWNER || process.env.EMAIL;
 
 var yargs = require('yargs')
@@ -36,8 +38,11 @@ if(args._.length < 2) {
   console.log(yargs.help());
   process.exit(1);
 } else {
+  // Docker image.
   var image = args._[0];
-  var command = ['/bin/bash', '-cvex'].concat(args._.slice(1));
+  // Arguments for docker cmd (note that we do not specify a shell here very
+  // similar to how docker run does not specify a default shell for commands)
+  var command = args._.slice(1);
 }
 
 if(!taskOwner) {
@@ -76,13 +81,21 @@ function endWhenTasksComplete(stream) {
   }
 }
 
+var showingLog = false;
 function displayLog(taskId, runId) {
-  var signedUrl = queue.buildSignedUrl(
-      queue.getArtifact, taskId, runId, LOG_NAME, {expiration: 60 * 100}
-  );
-  var stream = new LogStream(signedUrl);
-  stream.pipe(process.stdout);
-  endWhenTasksComplete(stream);
+  // The live log url is updated frequently as we update it from the live log
+  // endpoint to the actual backing file on s3. We only care about it the first
+  // time we log it.
+  if (showingLog) return
+  showingLog = true; // don't show more then one log at once...
+  var url = queue.buildUrl(queue.getArtifact, taskId, runId, LOG_NAME);
+
+  return readLog(url).then(function(stream) {
+    stream.pipe(process.stdout);
+    endWhenTasksComplete(stream);
+  }).catch(function(err) {
+    console.error("Could not open stream: ", err)
+  });
 }
 
 function handleEvent(message) {
@@ -95,7 +108,10 @@ function handleEvent(message) {
       console.log("Task Created.\nTask ID: %s\nTask State: Pending", taskId);
       break;
     case 'running':
-      if (message.exchange.indexOf('artifact-created') > -1 && payload.artifact.name == LOG_NAME) {
+      if (
+        message.exchange.indexOf('artifact-created') > -1 &&
+        payload.artifact.name == LOG_NAME
+      ) {
         displayLog(taskId, runId);
       }
       break;
@@ -129,7 +145,6 @@ function buildTaskRequest(taskId) {
       'taskGroupId': taskId,
       'routes': [],
       'retries': 1,
-      'priority': 5,
       'created': creationDate,
       'deadline': deadlineDate,
       'scopes': [],
@@ -137,7 +152,7 @@ function buildTaskRequest(taskId) {
         'image': image,
         'command': command,
         'env': env,
-        'maxRunTime': 600
+        'maxRunTime': 7200 // two hours...
       },
       'metadata': {
         'owner': taskOwner,
