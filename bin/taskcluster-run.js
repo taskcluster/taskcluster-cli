@@ -10,7 +10,6 @@ var debug = require('debug')('taskcluster-cli:run');
 var TaskFactory = require('taskcluster-task-factory/task');
 var LogStream = require('taskcluster-logstream');
 var Promise = require('promise');
-var URL = require('url');
 
 var Listener = taskcluster.Listener;
 var queueEvents = new taskcluster.QueueEvents;
@@ -88,6 +87,7 @@ function displayLog(taskId, runId) {
   // endpoint to the actual backing file on s3. We only care about it the first
   // time we log it.
   if (showingLog) return
+  showingLog = true; // don't show more then one log at once...
   var url = queue.buildUrl(queue.getArtifact, taskId, runId, LOG_NAME);
 
   return readLog(url).then(function(stream) {
@@ -145,7 +145,6 @@ function buildTaskRequest(taskId) {
       'taskGroupId': taskId,
       'routes': [],
       'retries': 1,
-      'priority': 5,
       'created': creationDate,
       'deadline': deadlineDate,
       'scopes': [],
