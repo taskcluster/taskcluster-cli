@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "name": "Hello world task graph",
+    "description": "Used as an example in the taskcluster cli",
+    "source": "https://github.com/taskcluster/taskcluster-cli",
+    "owner": "jlal@mozilla.com"
+  },
+  "scopes": [
+    "queue:define-task:aws-provisioner/v2",
+    "queue:create-task:aws-provisioner/v2"
+  ],
+  "tasks": [
+    {
+      "task": {
+        "schedulerId": "task-graph-scheduler",
+        "metadata": {
+          "name": "Hello world graph",
+          "description": "Says hello",
+          "source": "https://github.com/taskcluster/taskcluster-cli",
+          "owner": "jlal@mozilla.com"
+        },
+        "provisionerId": "aws-provisioner",
+        "workerType": "v2",
+        "payload": {
+          "maxRunTime": 300,
+          "image": "ubuntu:14.04",
+          "command": [
+            "/bin/bash",
+            "-xevc",
+            "echo 'hello'"
+          ]
+        }
+      }
+    }
+  ]
+}
