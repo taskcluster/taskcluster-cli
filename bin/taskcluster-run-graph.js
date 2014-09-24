@@ -25,7 +25,7 @@ var yargs = require('yargs')
     describe: 'When true dump the task graph to stdout',
   });
 
-var args = yargs.argv
+var args = yargs.argv;
 
 function runGraph(graphContent) {
   // Most fields can be directly embedded in the graph but some must be
