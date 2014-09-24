@@ -6,11 +6,12 @@ var yargs = require('yargs')
   .usage(
 'Usage: taskcluster COMMAND [arg...]\n\n' +
 'Commands:\n' +
-'  run\tRun a task within taskcluster'
+'  run        Run a task within taskcluster\n' +
+'  run-graph  Run a task graph within taskcluster'
 );
 
 var argv = yargs.argv;
-var allowedCommands = ['run'];
+var allowedCommands = ['run', 'run-graph'];
 
 if (!argv._.length) {
   console.log(yargs.help());

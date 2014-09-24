@@ -10,11 +10,14 @@
   "license": "ISC",
   "bin": {
     "taskcluster": "bin/taskcluster.js",
-    "taskcluster-run": "bin/taskcluster-run.js"
+    "taskcluster-run": "bin/taskcluster-run.js",
+    "taskcluster-run-graph": "bin/taskcluster-run-graph.js"
   },
   "dependencies": {
     "debug": "^1.0.4",
     "dotenv": "^0.4.0",
+    "js-yaml": "^3.2.2",
+    "open": "0.0.5",
     "promise": "^5.0.0",
     "slugid": "^1.0.1",
     "taskcluster-client": "^0.15.1",
