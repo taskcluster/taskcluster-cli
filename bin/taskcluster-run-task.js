@@ -7,7 +7,7 @@ var loadStdinOrFile = require('../lib/stdin_or_file');
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
 
-var Listener = taskcluster.Listener;
+var Listener = taskcluster.WebListener;
 var queueEvents = new taskcluster.QueueEvents;
 var queue = new taskcluster.Queue();
 
@@ -91,25 +91,18 @@ function handleEvent(message) {
   }
 }
 
-function createListener(connectionString, taskId, eventHandler) {
-  listener = new Listener({
-    connectionString: connectionString,
-  });
+function runTask(task) {
+  var taskId = slugid.v4();
+
+  var listener = new Listener();
   listener.bind(queueEvents.taskPending({taskId: taskId}));
   listener.bind(queueEvents.taskRunning({taskId: taskId}));
   listener.bind(queueEvents.taskCompleted({taskId: taskId}));
   listener.bind(queueEvents.artifactCreated({taskId: taskId}));
   listener.on('message', handleEvent);
-  return listener;
-}
 
-function runTask(task) {
-  return queue.getAMQPConnectionString().then(function(result) {
-    var taskId = slugid.v4();
-    var listener = createListener(result.url, taskId, handleEvent);
-    return listener.resume().then(function () {
-      return queue.createTask(taskId, task);
-    });
+  listener.resume().then(function () {
+    return queue.createTask(taskId, task);
   }).catch(function(error) {
     if (error.body) {
       console.error('Message: %s', error.body.message);
