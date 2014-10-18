@@ -11,7 +11,7 @@ var TaskFactory = require('taskcluster-task-factory/task');
 var LogStream = require('taskcluster-logstream');
 var Promise = require('promise');
 
-var Listener = taskcluster.Listener;
+var Listener = taskcluster.WebListener;
 var queueEvents = new taskcluster.QueueEvents;
 var queue = new taskcluster.Queue();
 
@@ -169,26 +169,17 @@ function buildTaskRequest(taskId) {
   return task;
 }
 
-function createListener(connectionString, taskId, eventHandler) {
-  listener = new Listener({
-    connectionString: connectionString,
-  });
-  listener.bind(queueEvents.taskPending({taskId: taskId}));
-  listener.bind(queueEvents.taskRunning({taskId: taskId}));
-  listener.bind(queueEvents.taskCompleted({taskId: taskId}));
-  listener.bind(queueEvents.artifactCreated({taskId: taskId}));
-  listener.on('message', handleEvent);
-  return listener;
-}
+var taskId = slugid.v4();
+var task = buildTaskRequest(taskId);
+var listener = new Listener();
+listener.bind(queueEvents.taskPending({taskId: taskId}));
+listener.bind(queueEvents.taskRunning({taskId: taskId}));
+listener.bind(queueEvents.taskCompleted({taskId: taskId}));
+listener.bind(queueEvents.artifactCreated({taskId: taskId}));
+listener.on('message', handleEvent);
 
-queue.getAMQPConnectionString().then(function(result) {
-  var taskId = slugid.v4();
-  var task = buildTaskRequest(taskId);
-  var listener = createListener(result.url, taskId, handleEvent);
-
-  return listener.resume().then(function () {
-    return queue.createTask(taskId, task)
-  });
+listener.connect().then(function () {
+  return queue.createTask(taskId, task)
 }).catch(function(error) {
   if(error.body) {
     console.error("Message: %s", error.body.message);
