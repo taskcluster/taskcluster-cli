@@ -3,7 +3,7 @@ var fs = require('fs');
 var fsPath = require('path');
 var slugid = require('slugid');
 var open = require('open');
-var yaml = require('js-yaml');
+var loadStdinOrFile = require('../lib/stdin_or_file');
 
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
@@ -25,23 +25,7 @@ var yargs = require('yargs')
     describe: 'When true dump the task graph to stdout',
   });
 
-/**
-Figure out what format the graph is then load it and return the object.
-*/
-function loadGraph(pathName) {
-  pathName = fsPath.resolve(pathName);
-
-  switch (fsPath.extname(pathName)) {
-    // YAML files...
-    case '.yaml':
-    case '.yml':
-      return yaml.safeLoad(fs.readFileSync(pathName, 'utf8'));
-
-    // JSON or JS files...
-    default:
-      return require(pathName);
-  }
-}
+var args = yargs.argv;
 
 function runGraph(graphContent) {
   // Most fields can be directly embedded in the graph but some must be
@@ -78,35 +62,11 @@ function runGraph(graphContent) {
   });
 }
 
-var args = yargs.argv
-var graph = args._[0];
 
-if (graph && !fs.existsSync(graph)) {
-  console.error('Error: graph file "%s" does not exist', graph);
+loadStdinOrFile(args._[0]).then(function(contents) {
+  return runGraph(contents);
+}).catch(function(err) {
+  console.error(err.toString());
   console.error(yargs.help());
   process.exit(1);
-}
-
-if (graph) {
-  // Run graph from a file...
-  runGraph(loadGraph(graph));
-} else {
-  var graphContent = '';
-  // Run graph from stdin...
-  process.stdin.setEncoding('utf8');
-  process.stdin.on('readable', function() {
-    var chunk;
-    while (chunk = process.stdin.read()) graphContent += chunk;
-  });
-  process.stdin.once('end', function() {
-    var graph;
-    try {
-      graph = JSON.parse(graphContent);
-      runGraph(graph);
-    } catch(e) {
-      console.error("Failed to read JSON from stdin: %j", graph);
-      console.error(yargs.help());
-      process.exit(1);
-    }
-  });
-}
+});

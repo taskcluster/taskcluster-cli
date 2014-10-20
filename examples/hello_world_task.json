@@ -1,0 +1,28 @@
+{
+  "schedulerId": "task-graph-scheduler",
+  "metadata": {
+    "name": "Hello world graph",
+    "description": "Says hello",
+    "source": "https://github.com/taskcluster/taskcluster-cli",
+    "owner": "jlal@mozilla.com"
+  },
+  "provisionerId": "aws-provisioner",
+  "workerType": "v2",
+  "payload": {
+    "maxRunTime": 300,
+    "image": "ubuntu:14.04",
+    "command": [
+      "/bin/bash",
+      "-xevc",
+      "echo 'hello'"
+    ]
+  },
+  "created": "2014-09-24T23:45:16.563Z",
+  "deadline": "2014-09-25T23:45:16.563Z",
+  "taskGroupId": "iqwjtlTrRJ6nESnygdqWAQ",
+  "routes": [],
+  "retries": 5,
+  "scopes": [],
+  "tags": {},
+  "extra": {}
+}
