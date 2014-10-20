@@ -94,7 +94,7 @@ function handleEvent(message) {
 function runTask(task) {
   var taskId = slugid.v4();
 
-  var listener = new Listener();
+  listener = new Listener();
   listener.bind(queueEvents.taskPending({taskId: taskId}));
   listener.bind(queueEvents.taskRunning({taskId: taskId}));
   listener.bind(queueEvents.taskCompleted({taskId: taskId}));

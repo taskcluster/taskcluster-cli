@@ -14,6 +14,10 @@ var yargs = require('yargs')
   .describe('env-file', 'Environment variable file to apply on worker')
   .describe('provisioner-id', 'Provisioner ID. Example: aws-provisioner')
   .describe('worker-type', 'Worker Type. Example: \'cli\'')
+  .describe('verbose', {
+    type: 'boolean',
+    default: true,
+  })
   .options('owner', {
     default: process.env.TASKCLUSTER_TASK_OWNER || process.env.EMAIL,
     describe: 'Who owns this task (email address)'
@@ -94,10 +98,15 @@ function buildTaskRequest(taskId) {
 
 var taskId = slugid.v4();
 var task = buildTaskRequest(taskId);
+var procArgs = ['run-task'];
+
+if (args.verbose) {
+  procArgs.push('--verbose');
+}
 
 var proc = require('child_process').spawn(
   'taskcluster',
-  ['run-task'],
+  procArgs,
   { stdio: 'pipe', env: process.env }
 );
 
