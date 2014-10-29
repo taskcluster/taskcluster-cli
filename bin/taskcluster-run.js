@@ -14,9 +14,10 @@ var yargs = require('yargs')
   .describe('env-file', 'Environment variable file to apply on worker')
   .describe('provisioner-id', 'Provisioner ID. Example: aws-provisioner')
   .describe('worker-type', 'Worker Type. Example: \'cli\'')
-  .describe('verbose', {
-    type: 'boolean',
+  .options('verbose', {
+    boolean: true,
     default: true,
+    describe: 'Log additional details'
   })
   .options('owner', {
     default: process.env.TASKCLUSTER_TASK_OWNER || process.env.EMAIL,
