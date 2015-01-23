@@ -8,11 +8,12 @@ var yargs = require('yargs')
 'Commands:\n' +
 '  run        Run a task via a docker run like interface\n' +
 '  run-graph  Run a task graph within taskcluster\n' +
-'  run-task   Run a task within taskcluster\n'
+'  run-task   Run a task within taskcluster\n' +
+'  login      Login with taskcluster\n'
 );
 
 var argv = yargs.argv;
-var allowedCommands = ['run', 'run-graph', 'run-task'];
+var allowedCommands = ['run', 'run-graph', 'run-task', 'login'];
 
 if (!argv._.length) {
   console.log(yargs.help());

@@ -18,6 +18,10 @@ export TASKCLUSTER_CLIENT_ID=...
 export TASKCLUSTER_ACCESS_TOKEN=...
 ```
 
+Or you can run `taskcluster login` which will authenticate you with temporary
+credentials that will then be stored in a configuration. This is the preferred
+way of authentication.
+
 # Usage
 
 ```sh

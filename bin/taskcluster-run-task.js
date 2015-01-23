@@ -6,6 +6,8 @@ var loadStdinOrFile = require('../lib/stdin_or_file');
 
 var taskcluster = require('taskcluster-client');
 var debug = require('debug')('taskcluster-cli:run');
+var config = require('../lib/config');
+config.load();
 
 var Listener = taskcluster.WebListener;
 var queueEvents = new taskcluster.QueueEvents;
