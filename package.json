@@ -12,7 +12,8 @@
     "taskcluster": "bin/taskcluster.js",
     "taskcluster-run": "bin/taskcluster-run.js",
     "taskcluster-run-graph": "bin/taskcluster-run-graph.js",
-    "taskcluster-run-task": "bin/taskcluster-run-task.js"
+    "taskcluster-run-task": "bin/taskcluster-run-task.js",
+    "taskcluster-login": "bin/taskcluster-login.js"
   },
   "dependencies": {
     "debug": "^1.0.4",
