@@ -76,11 +76,9 @@ function handleEvent(message) {
       }
       break;
     case 'completed':
-      if (payload.success) {
-        verbose('Task Completed');
-        taskComplete = true;
-        break;
-      }
+      verbose('Task Completed');
+      taskComplete = true;
+      break;
     case 'failed':
       if (payload.status.state == 'completed') {
         result = 'Task Completed Unsuccessfully';
@@ -100,6 +98,7 @@ function runTask(task) {
   listener.bind(queueEvents.taskPending({taskId: taskId}));
   listener.bind(queueEvents.taskRunning({taskId: taskId}));
   listener.bind(queueEvents.taskCompleted({taskId: taskId}));
+  listener.bind(queueEvents.taskFailed({taskId: taskId}));
   listener.bind(queueEvents.artifactCreated({taskId: taskId}));
   listener.on('message', handleEvent);
 
