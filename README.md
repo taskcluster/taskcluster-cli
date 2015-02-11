@@ -16,6 +16,7 @@ Add taskcluster credential environment variables.  This is best done in your she
 ```sh
 export TASKCLUSTER_CLIENT_ID=...
 export TASKCLUSTER_ACCESS_TOKEN=...
+export TASKCLUSTER_CERTIFICATE=... # the full JSON string
 ```
 
 Or you can run `taskcluster login` which will authenticate you with temporary
