@@ -1,6 +1,6 @@
 {
   "name": "taskcluster-cli",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -22,14 +22,10 @@
     "open": "0.0.5",
     "promise": "^5.0.0",
     "slugid": "^1.0.1",
-    "taskcluster-client": "^0.19.4",
-    "taskcluster-logstream": "^0.2.0",
+    "taskcluster-client": "^0.22.0",
     "taskcluster-task-factory": "^0.6.3",
     "yargs": "^1.3.1",
     "appdirectory": "0.1.0",
     "mkdirp": "0.5.0"
-  },
-  "devDependencies": {
-    "debug": "^1.0.4"
   }
 }

@@ -51,7 +51,7 @@ if (args.envFile) {
 }
 
 if (args.env) {
-  var cli_envs = args.env;
+  var cliEnvs = args.env;
   if (args.env instanceof Array) {
     cliEnvs = args.env.join('\n');
   }
