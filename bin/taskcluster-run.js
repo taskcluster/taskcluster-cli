@@ -35,7 +35,7 @@ if (args._.length < 2) {
   var image = args._[0];
   // Arguments for docker cmd (note that we do not specify a shell here very
   // similar to how docker run does not specify a default shell for commands)
-  var command = args._.slice(1);
+  var command = args._.slice(1).toString().split(" ");
 }
 
 // Command line arguments should take precedence over those listed in the env 
