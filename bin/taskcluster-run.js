@@ -7,7 +7,8 @@ var debug = require('debug')('taskcluster-cli:run');
 
 var yargs = require('yargs')
   .usage('Run a task within the task cluster')
-  .example('taskcluster run', '-e BUILD_OPTS=debug ubuntu:14.04 \'make -j=5\'')
+  .example('taskcluster run', '-e BUILD_OPTS=debug ubuntu:14.04 -- make -j=5')
+  .example('taskcluster run', 'ubuntu:14.04 ls /tmp')
   .demand(['provisioner-id', 'worker-type', 'owner'])
   .alias('e', 'env')
   .describe('e', 'Environment variable to apply on worker')
