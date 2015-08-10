@@ -69,6 +69,6 @@ queue.status(taskId).then(function(result) {
     process.exit(code);
   });
 }).catch(function(err) {
-  console.log("Error: " + err.stack);
+  console.log(err.stack);
   process.exit(1);
 });
