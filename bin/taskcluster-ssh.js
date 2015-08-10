@@ -14,6 +14,7 @@ var yargs = require('yargs')
   .example('taskcluster ssh', 'taskId')
 
 var taskId = yargs.argv._[0];
+assert(taskId, "Missing taskId");
 
 var queue = new taskcluster.Queue();
 
