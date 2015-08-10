@@ -13,7 +13,7 @@ var yargs = require('yargs')
 );
 
 var argv = yargs.argv;
-var allowedCommands = ['run', 'run-graph', 'run-task', 'login'];
+var allowedCommands = ['run', 'run-graph', 'run-task', 'login', 'ssh'];
 
 if (!argv._.length) {
   console.log(yargs.help());
