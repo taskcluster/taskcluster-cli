@@ -44,7 +44,7 @@ function runGraph(graphContent) {
 
   // Schedule the task
   var graphId = slugid.v4();
-  var inspectorUrl = 'http://docs.taskcluster.net/tools/task-graph-inspector/#';
+  var inspectorUrl = 'https://tools.taskcluster.net/task-graph-inspector/#';
   inspectorUrl += graphId;
 
   // Dump the graph first so its easy to inspect for errors...
