@@ -33,7 +33,7 @@ function runGraph(graphContent) {
   // Most fields can be directly embedded in the graph but some must be
   // dynamically generated such as the taskId and deadline...
   graphContent.tasks = graphContent.tasks.map(function(node) {
-    node.taskId = node.taskId || slugid.v4();
+    node.taskId = node.taskId || slugid.nice();
     node.task.created = node.created || new Date().toJSON();
     if (!node.task.deadline) {
       node.task.deadline = new Date();
@@ -43,7 +43,7 @@ function runGraph(graphContent) {
   });
 
   // Schedule the task
-  var graphId = slugid.v4();
+  var graphId = slugid.nice();
   var inspectorUrl = 'https://tools.taskcluster.net/task-graph-inspector/#';
   inspectorUrl += graphId;
 

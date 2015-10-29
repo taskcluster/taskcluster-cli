@@ -92,7 +92,7 @@ function handleEvent(message) {
 }
 
 function runTask(task) {
-  var taskId = slugid.v4();
+  var taskId = slugid.nice();
 
   listener = new Listener();
   listener.bind(queueEvents.taskPending({taskId: taskId}));

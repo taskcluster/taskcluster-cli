@@ -98,7 +98,7 @@ function buildTaskRequest(taskId) {
   return task;
 }
 
-var taskId = slugid.v4();
+var taskId = slugid.nice();
 var task = buildTaskRequest(taskId);
 var procArgs = ['run-task'];
 
