@@ -2,4 +2,8 @@
 package main
 
 import _ "github.com/taskcluster/taskcluster-cli/apis"
+import _ "github.com/taskcluster/taskcluster-cli/client"
+import _ "github.com/taskcluster/taskcluster-cli/config"
 import _ "github.com/taskcluster/taskcluster-cli/extpoints"
+import _ "github.com/taskcluster/taskcluster-cli/s3"
+import _ "github.com/taskcluster/taskcluster-cli/version"
