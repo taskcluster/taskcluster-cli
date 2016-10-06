@@ -14,11 +14,11 @@ import (
 	"github.com/taskcluster/taskcluster-cli/version"
 )
 
-func TestPutFolder1Folder2(t *testing.T) {
-	// Initial setup
-	var s3Test S3
+// Initial setup
+var s3Test S3
 
-	// Create a file to upload
+func createFile() string {
+	// Get current path
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Error occured: ", err)
@@ -26,9 +26,6 @@ func TestPutFolder1Folder2(t *testing.T) {
 
 	// Create filepath
 	filename := filepath.Join(pwd, "testFile.txt")
-	if err := os.MkdirAll(filepath.Dir(filename), 0775); err != nil {
-		fmt.Println("Unable to create directory: ", err)
-	}
 
 	// Setup the local file
 	file, err := os.Create(filename)
@@ -40,9 +37,14 @@ func TestPutFolder1Folder2(t *testing.T) {
 	// Write to file
 	data := []byte("Hello World")
 	file.Write(data)
+	return filename
+}
+
+func TestPutFolder1Folder2(t *testing.T) {
+	filename := createFile()
 
 	// Parse arguments
-	os.Args = []string{"taskcluster", "s3", "put", "testFile.txt", "test-bucket-for-any-garbage", "folder1/folder2/"}
+	os.Args = []string{"taskcluster", "s3", "put", filename, "test-bucket-for-any-garbage", "folder1/folder2/"}
 	arguments, err := docopt.Parse(usage(), nil, true, version.VersionNumber, true)
 	if err != nil {
 		fmt.Println("Failed to parse arguments")
@@ -54,7 +56,7 @@ func TestPutFolder1Folder2(t *testing.T) {
 		fmt.Println("Failed to load configuration file, error: ", err)
 	}
 
-	// context given to Execute
+	// Set context
 	var context extpoints.Context
 	context.Arguments = arguments
 	context.Config = nil
@@ -69,12 +71,16 @@ func TestPutFolder1Folder2(t *testing.T) {
 	assert.Equal(t, true, result, "An error occured during execution.")
 }
 
-func TestGetFolder1Folder2(t *testing.T) {
-	// Initial Setup
-	var s3Test S3
+func TestGetWithTarget(t *testing.T) {
+	// Get current path
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error occured: ", err)
+	}
+	target := filepath.Join(pwd, "testFile.txt")
 
 	// Parse arguments
-	os.Args = []string{"taskcluster", "s3", "get", "testFile.txt", "test-bucket-for-any-garbage", "folder1/folder2/"}
+	os.Args = []string{"taskcluster", "s3", "get", "test-bucket-for-any-garbage", "folder1/folder2/testFile.txt", target}
 	arguments, err := docopt.Parse(usage(), nil, true, version.VersionNumber, true)
 	if err != nil {
 		fmt.Println("Failed to parse arguments")
@@ -86,7 +92,7 @@ func TestGetFolder1Folder2(t *testing.T) {
 		fmt.Println("Failed to load configuration file, error: ", err)
 	}
 
-	// context given to Execute
+	// Set context
 	var context extpoints.Context
 	context.Arguments = arguments
 	context.Config = nil
@@ -97,16 +103,40 @@ func TestGetFolder1Folder2(t *testing.T) {
 	}
 
 	result := s3Test.Execute(context)
+	assert.Equal(t, true, result, "An error occured during execution.")
+}
 
+func TestGetWithOutTarget(t *testing.T) {
+	// Parse arguments
+	os.Args = []string{"taskcluster", "s3", "get", "test-bucket-for-any-garbage", "folder1/folder2/testFile.txt"}
+	arguments, err := docopt.Parse(usage(), nil, true, version.VersionNumber, true)
+	if err != nil {
+		fmt.Println("Failed to parse arguments")
+	}
+
+	// Load configuration
+	config, err := config.Load()
+	if err != nil {
+		fmt.Println("Failed to load configuration file, error: ", err)
+	}
+
+	// Set context
+	var context extpoints.Context
+	context.Arguments = arguments
+	context.Config = nil
+	context.Credentials = &client.Credentials{
+		ClientID:    config["config"]["clientId"].(string),
+		AccessToken: config["config"]["accessToken"].(string),
+		Certificate: config["config"]["certificate"].(string),
+	}
+
+	result := s3Test.Execute(context)
 	assert.Equal(t, true, result, "An error occured during execution.")
 }
 
 func TestGetFolder1(t *testing.T) {
-	// Initial Setup
-	var s3Test S3
-
 	// Parse arguments
-	os.Args = []string{"taskcluster", "s3", "get", "testFile.txt", "test-bucket-for-any-garbage", "folder1/"}
+	os.Args = []string{"taskcluster", "s3", "get", "test-bucket-for-any-garbage", "folder1/testFile.txt"}
 	arguments, err := docopt.Parse(usage(), nil, true, version.VersionNumber, true)
 	if err != nil {
 		fmt.Println("Failed to parse arguments")
@@ -118,7 +148,7 @@ func TestGetFolder1(t *testing.T) {
 		fmt.Println("Failed to load configuration file, error: ", err)
 	}
 
-	// context given to Execute
+	// Set context
 	var context extpoints.Context
 	context.Arguments = arguments
 	context.Config = nil
@@ -129,6 +159,35 @@ func TestGetFolder1(t *testing.T) {
 	}
 
 	result := s3Test.Execute(context)
-
 	assert.Equal(t, false, result, "Expected an error.")
+}
+
+func TestPutToFile(t *testing.T) {
+	filename := createFile()
+
+	// Parse arguments
+	os.Args = []string{"taskcluster", "s3", "put", filename, "test-bucket-for-any-garbage", "folder1/folder2/testFile.txt"}
+	arguments, err := docopt.Parse(usage(), nil, true, version.VersionNumber, true)
+	if err != nil {
+		fmt.Println("Failed to parse arguments")
+	}
+
+	// Load configuration
+	config, err := config.Load()
+	if err != nil {
+		fmt.Println("Failed to load configuration file, error: ", err)
+	}
+
+	// Set context
+	var context extpoints.Context
+	context.Arguments = arguments
+	context.Config = nil
+	context.Credentials = &client.Credentials{
+		ClientID:    config["config"]["clientId"].(string),
+		AccessToken: config["config"]["accessToken"].(string),
+		Certificate: config["config"]["certificate"].(string),
+	}
+
+	result := s3Test.Execute(context)
+	assert.Equal(t, true, result, "An error occured during execution.")
 }

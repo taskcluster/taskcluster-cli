@@ -2,15 +2,15 @@ package s3
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/taskcluster/taskcluster-cli/config"
 	"github.com/taskcluster/taskcluster-cli/extpoints"
 	"github.com/taskcluster/taskcluster-client-go"
 	"github.com/taskcluster/taskcluster-client-go/auth"
@@ -34,7 +34,7 @@ func usage() string {
 	return `Upload/Download file to/from AWS S3.
 Usage:
   taskcluster S3 put <file> <bucket> <prefix>
-  taskcluster S3 get <key> <bucket> <prefix>
+  taskcluster S3 get <bucket> <prefix> [<target>]
   taskcluster S3 help <subcommand>
 `
 }
@@ -62,7 +62,7 @@ func (S3) Execute(context extpoints.Context) bool {
 		if subcommand == "put" {
 			fmt.Println("Usage:\ntaskcluster S3 put <file> <bucket> <prefix>")
 		} else if subcommand == "get" {
-			fmt.Println("Usage:\ntaskcluster S3 get <key> <bucket> <prefix>")
+			fmt.Println("Usage:\ntaskcluster S3 get <bucket> <prefix> [<target>]")
 		} else {
 			fmt.Printf("Invalid subcommand.\n")
 		}
@@ -81,8 +81,8 @@ func (S3) Execute(context extpoints.Context) bool {
 		return false
 	}
 
-	// Set level, filename and key
-	var level, filename, key string
+	// Set level, filename and target
+	var level, filename, target string
 	if argv["put"] == true {
 		level = "read-write"
 		filename, ok = argv["<file>"].(string)
@@ -91,29 +91,16 @@ func (S3) Execute(context extpoints.Context) bool {
 			return false
 		}
 	} else if argv["get"] == true {
-		level = "read-write" // can change this later
-		key, ok = argv["<key>"].(string)
+		level = "read-only"
+		target, ok = argv["<target>"].(string)
 		if !ok {
-			fmt.Println("Invalid key format.")
-			return false
+			target = ""
 		}
 	}
 
-	// Load configuration
-	config, err := config.Load()
-	if err != nil {
-		fmt.Println("Failed to load configuration file, error: ", err)
-		return false
-	}
-
-	// Set credentials for auth
-	myAuth := auth.New(
-		&tcclient.Credentials{
-			ClientID:    config["config"]["clientId"].(string),
-			AccessToken: config["config"]["accessToken"].(string),
-			Certificate: config["config"]["certificate"].(string),
-		},
-	)
+	// Set credentials
+	authCreds := tcclient.Credentials(*context.Credentials)
+	myAuth := auth.New(&authCreds)
 
 	// Get credentials for AWS S3
 	resp, err := myAuth.AwsS3Credentials(level, bucket, prefix)
@@ -135,7 +122,29 @@ func (S3) Execute(context extpoints.Context) bool {
 	}
 
 	// Get bucket location
-	aws_config := aws.NewConfig().WithCredentials(creds).WithRegion("us-west-2")
+	region, err := findBucketRegion(creds, bucket)
+	if err != nil {
+		fmt.Println("Failed to find bucket region", err)
+		return false
+	}
+
+	// Create a session which contains the configurations for the SDK.
+	// Use the session to create the service clients to make API calls to AWS.
+	aws_config := aws.NewConfig().WithCredentials(creds).WithRegion(*region)
+	sess := session.New(aws_config)
+	svc := awsS3.New(sess)
+
+	if argv["put"] == true {
+		return put(svc, filename, bucket, prefix)
+	} else if argv["get"] == true {
+		return get(svc, bucket, prefix, target)
+	} else {
+		panic(fmt.Sprint("Invalid subcommand."))
+	}
+}
+
+func findBucketRegion(creds *credentials.Credentials, bucket string) (region *string, err error) {
+	aws_config := aws.NewConfig().WithCredentials(creds).WithRegion("us-east-1")
 	sess := session.New(aws_config)
 	svc := awsS3.New(sess)
 	params := &awsS3.GetBucketLocationInput{
@@ -143,30 +152,14 @@ func (S3) Execute(context extpoints.Context) bool {
 	}
 	res, err := svc.GetBucketLocation(params)
 	if err != nil {
-		fmt.Println(err.Error())
-		return false
+		return nil, err
 	}
-	region := res.LocationConstraint
-
-	// Create a session which contains the configurations for the SDK.
-	// Use the session to create the service clients to make API calls to AWS.
-	aws_config = aws.NewConfig().WithCredentials(creds).WithRegion(*region)
-	sess = session.New(aws_config)
-	svc = awsS3.New(sess)
-
-	if argv["put"] == true {
-		upload := Put(svc, filename, bucket, prefix)
-		return upload
-	} else if argv["get"] == true {
-		download := Get(svc, key, bucket, prefix)
-		return download
-	} else {
-		panic(fmt.Sprint("Invalid subcommand."))
-	}
+	region = res.LocationConstraint
+	return
 }
 
-func Put(svc *awsS3.S3, filename string, bucket string, prefix string) bool {
-	// Open the filename and return the file
+func put(svc *awsS3.S3, filename string, bucket string, prefix string) bool {
+	// Open the filename
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Failed to open file", filename, err)
@@ -174,15 +167,19 @@ func Put(svc *awsS3.S3, filename string, bucket string, prefix string) bool {
 	}
 	defer file.Close()
 
-	// Generate key from filename
-	key := filepath.Base(filename)
+	// If prefix ends in a slash, add last element of path
+	key := prefix
+	endsWithSlash := strings.HasSuffix(prefix, "/")
+	if endsWithSlash {
+		key = prefix + filepath.Base(filename)
+	}
 
-	fmt.Printf("Uploading %s to s3://%s/%s...\n", key, bucket, prefix)
+	fmt.Printf("Uploading to s3://%s/%s...\n", bucket, prefix)
 
 	// Upload the file
 	params := &awsS3.PutObjectInput{
 		Bucket: aws.String(bucket),
-		Key:    aws.String(prefix + key),
+		Key:    aws.String(key),
 		Body:   file,
 	}
 	_, err = svc.PutObject(params)
@@ -191,11 +188,11 @@ func Put(svc *awsS3.S3, filename string, bucket string, prefix string) bool {
 		return false
 	}
 
-	fmt.Printf("Successfully uploaded %s to s3://%s/%s\n", key, bucket, prefix)
+	fmt.Printf("Successfully uploaded %s to s3://%s/%s\n", filepath.Base(filename), bucket, prefix)
 	return true
 }
 
-func Get(svc *awsS3.S3, key string, bucket string, prefix string) bool {
+func get(svc *awsS3.S3, bucket string, prefix string, target string) bool {
 	// Get current path
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -203,11 +200,12 @@ func Get(svc *awsS3.S3, key string, bucket string, prefix string) bool {
 		return false
 	}
 
-	// Create filepath
-	filename := filepath.Join(pwd, key)
-	if err := os.MkdirAll(filepath.Dir(filename), 0775); err != nil {
-		fmt.Println("Unable to create directory: ", err)
-		return false
+	// If target is not present, use current directory
+	var filename string
+	if target != "" {
+		filename = target
+	} else {
+		filename = filepath.Join(pwd, filepath.Base(prefix))
 	}
 
 	// Setup the local file
@@ -217,27 +215,36 @@ func Get(svc *awsS3.S3, key string, bucket string, prefix string) bool {
 	}
 	defer file.Close()
 
-	fmt.Printf("Downloading from s3://%s/%s to %s...\n", bucket, prefix+key, filename)
+	fmt.Printf("Downloading from s3://%s/%s...\n", bucket, prefix)
 
 	// Download the file
 	params := &awsS3.GetObjectInput{
 		Bucket: aws.String(bucket),
-		Key:    aws.String(prefix + key),
+		Key:    aws.String(prefix),
 	}
 
 	resp, err := svc.GetObject(params)
 	if err != nil {
-		fmt.Printf("Failed to download data to %s from s3://%s/%s\n", filename, bucket, prefix+key)
+		fmt.Printf("Failed to download data from s3://%s/%s\n", bucket, prefix)
 		return false
 	}
 
-	// Write data to the file
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading content", err)
+	// Write data to the file, retry if error occurs
+	maxTries := 5
+	for maxTries > 0 {
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			fmt.Println("Error reading content", err)
+			maxTries--
+			if maxTries != 0 {
+				fmt.Println("Trying again...")
+			}
+			continue
+		} else {
+			break
+		}
 	}
-	file.Write(data)
 
-	fmt.Printf("Successfully downloaded to %s from s3://%s/%s. (%d bytes)\n", filename, bucket, prefix+key, *resp.ContentLength)
+	fmt.Printf("Successfully downloaded to %s from s3://%s/%s. (%d bytes)\n", filename, bucket, prefix, *resp.ContentLength)
 	return true
 }
