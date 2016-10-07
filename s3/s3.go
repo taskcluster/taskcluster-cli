@@ -32,10 +32,27 @@ func (S3) Summary() string {
 
 func usage() string {
 	return `Upload/Download file to/from AWS S3.
+
 Usage:
   taskcluster S3 put <file> <bucket> <prefix>
   taskcluster S3 get <bucket> <prefix> [<target>]
   taskcluster S3 help <subcommand>
+
+The required scopes are auth:aws-s3:<level>:<bucket>/<prefix>. The level parameter 
+can be read-write or read-only and determines which type of credentials are returned. 
+Please note that the level parameter is required in the scope guarding access. 
+The bucket name must not contain a ".". Also, the prefix may not start with 
+slash /.
+
+### Upload
+The file is uploaded to s3://<bucket>/<prefix>. If the prefix does not end with a slash /,
+the contents at the prefix are overwritten by the file. For example, if a prefix of
+folder1/file.txt is specified, file.txt is overwritten.
+
+### Download
+If <target> is specified, the file is downloaded from s3://<bucket>/<prefix> to <target>.
+If not specified, the file is downloaded to the current working directory.
+
 `
 }
 
@@ -53,43 +70,16 @@ func (S3) Execute(context extpoints.Context) bool {
 		panic(fmt.Sprintf("Unknown command: %s", command))
 	}
 
-	// Print help for subcommands
-	if argv["help"] == true {
-		subcommand, ok := argv["<subcommand>"].(string)
-		if !ok {
-			panic(fmt.Sprintf("Unknown subcommand: %s", subcommand))
-		}
-		if subcommand == "put" {
-			fmt.Println("Usage:\ntaskcluster S3 put <file> <bucket> <prefix>")
-		} else if subcommand == "get" {
-			fmt.Println("Usage:\ntaskcluster S3 get <bucket> <prefix> [<target>]")
-		} else {
-			fmt.Printf("Invalid subcommand.\n")
-		}
-		return true
-	}
-
 	// Parse for bucket and prefix
-	bucket, ok := argv["<bucket>"].(string)
-	if !ok {
-		fmt.Println("Invalid bucket format.")
-		return false
-	}
-	prefix, ok := argv["<prefix>"].(string)
-	if !ok {
-		fmt.Println("Invalid prefix format.")
-		return false
-	}
+	bucket := argv["<bucket>"].(string)
+	prefix := argv["<prefix>"].(string)
 
 	// Set level, filename and target
 	var level, filename, target string
+	var ok bool
 	if argv["put"] == true {
 		level = "read-write"
-		filename, ok = argv["<file>"].(string)
-		if !ok {
-			fmt.Println("Invalid file format.")
-			return false
-		}
+		filename = argv["<file>"].(string)
 	} else if argv["get"] == true {
 		level = "read-only"
 		target, ok = argv["<target>"].(string)
