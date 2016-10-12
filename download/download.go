@@ -52,12 +52,25 @@ func (download) Execute(context extpoints.Context) bool {
 			ClientID:    "tester",
 			AccessToken: "no-secret",
 		}
-
 		userQueue := queue.New(permaCred)
-		url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*300)
 
-		if err != nil {
-			log.Panicf("Exception thrown signing URL \n%s", err)
+		if runId != "" {
+			//get a artifact with runId parameter
+			url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*300)
+			if err != nil {
+				log.Panicf("Exception thrown signing URL \n%s", err)
+			} else {
+
+			}
+		}
+		if runId == "" {
+			//get latest artifact without rundId parameter
+			url_artifact, err := userQueue.GetLatestArtifact_SignedURL(taskId, artifact, time.Second*300)
+			if err != nil {
+				log.Panicf("Exception thrown signing URL \n%s", err)
+			} else {
+
+			}
 		}
 
 	}
