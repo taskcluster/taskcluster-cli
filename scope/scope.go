@@ -24,7 +24,7 @@ func (scope) Summary() string {
 
 func usage() string {
 	return `Usage:
-  taskcluster SCOPE expand <scope>...
+  taskcluster scope expand <scope>...
 
 ### Expand
 This command returns an expanded copy of the given scope set, with scopes
@@ -40,15 +40,9 @@ func (scope) Usage() string {
 func (scope) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
 
-	command := argv["SCOPE"].(string)
-	provider := extpoints.CommandProviders()[command]
-	if provider == nil {
-		panic(fmt.Sprintf("Unknown command: %s", command))
-	}
-
-	// Set credentials
-	authCreds := tcclient.Credentials(*context.Credentials)
+	authCreds := tcclient.Credentials{}
 	myAuth := auth.New(&authCreds)
+	myAuth.Authenticate = false
 
 	if argv["expand"].(bool) {
 		return expandScope(argv, myAuth)
