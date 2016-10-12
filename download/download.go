@@ -1,6 +1,13 @@
 package download
 
-import "github.com/alexandrasp/taskcluster-cli/extpoints"
+import (
+	"log"
+	"time"
+
+	"github.com/alexandrasp/taskcluster-cli/extpoints"
+	"github.com/taskcluster/taskcluster-client-go"
+	"github.com/taskcluster/taskcluster-client-go/queue"
+)
 
 //"github.com/taskcluster/httpbackoff"
 
@@ -18,18 +25,41 @@ func (download) Summary() string {
 	return "Download an artifact"
 }
 
-func (download) Usage() string {
-	usage := "How you can download a taskcluster CLI artifact.\n"
-	usage += "\n"
-	usage += "Usage:\n"
-	usage += "taskcluster download [options]"
-	usage += "\n"
-	usage += "Options:"
-	usage += "\n"
-	return usage
+func usageDownload() string {
+	return `Usage:
+			taskcluster download [options]
+			Options:
+			<taskId> [<runId>] <artifact>
+			`
 }
 
-func (download) Execute(extpoints.Context) bool {
+func (download) Usage() string {
+	return usageDownload()
+}
+func (download) Execute(context extpoints.Context) bool {
+	command := context.Arguments["download"].(string)
+	taskId := context.Arguments["<taskId>"].(string)
+	runId := context.Arguments["<runId>"].(string)
+	artifact := context.Arguments["<artifact>"].(string)
 
+	provider := extpoints.CommandProviders()[command]
+	if provider == nil {
+		log.Panicf("Unknown command %s", command)
+
+	} else {
+
+		permaCred := &tcclient.Credentials{
+			ClientID:    "tester",
+			AccessToken: "no-secret",
+		}
+
+		userQueue := queue.New(permaCred)
+		url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*300)
+
+		if err != nil {
+			log.Panicf("Exception thrown signing URL \n%s", err)
+		}
+
+	}
 	return false
 }
