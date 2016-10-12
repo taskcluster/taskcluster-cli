@@ -2,9 +2,11 @@ package download
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/alexandrasp/taskcluster-cli/extpoints"
+	"github.com/taskcluster/httpbackoff"
 	"github.com/taskcluster/taskcluster-client-go"
 	"github.com/taskcluster/taskcluster-client-go/queue"
 )
@@ -56,20 +58,30 @@ func (download) Execute(context extpoints.Context) bool {
 
 		if runId != "" {
 			//get a artifact with runId parameter
-			url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*300)
+			url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*10)
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
 
+				//download with automatic retries
+				res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
+					resp, err := http.Get(url_artifact.String())
+					// assume all errors are temporary
+					return resp, err, nil
+				})
 			}
 		}
 		if runId == "" {
 			//get latest artifact without rundId parameter
-			url_artifact, err := userQueue.GetLatestArtifact_SignedURL(taskId, artifact, time.Second*300)
+			url_artifact, err := userQueue.GetLatestArtifact_SignedURL(taskId, artifact, time.Second*10)
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-
+				res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
+					resp, err := http.Get(url_artifact.String())
+					// assume all errors are temporary
+					return resp, err, nil
+				})
 			}
 		}
 
