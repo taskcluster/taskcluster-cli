@@ -95,7 +95,7 @@ func getAnArtifact(url string) {
 
 	} else {
 
-		fmt.Sscan("%d Retries", attempts)
+		fmt.Printf("Number of attempts: %d\n", attempts)
 		fmt.Printf("%+v\n", res)
 
 	}
