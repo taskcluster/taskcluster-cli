@@ -1,6 +1,7 @@
 package download
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -38,6 +39,7 @@ func usageDownload() string {
 func (download) Usage() string {
 	return usageDownload()
 }
+
 func (download) Execute(context extpoints.Context) bool {
 	command := context.Arguments["download"].(string)
 	taskId := context.Arguments["<taskId>"].(string)
@@ -54,6 +56,7 @@ func (download) Execute(context extpoints.Context) bool {
 			ClientID:    "tester",
 			AccessToken: "no-secret",
 		}
+
 		userQueue := queue.New(permaCred)
 
 		if runId != "" {
@@ -62,13 +65,7 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-
-				//download with automatic retries
-				res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
-					resp, err := http.Get(url_artifact.String())
-					// assume all errors are temporary
-					return resp, err, nil
-				})
+				getAnArtifact(url_artifact.String())
 			}
 		}
 		if runId == "" {
@@ -77,14 +74,30 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-				res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
-					resp, err := http.Get(url_artifact.String())
-					// assume all errors are temporary
-					return resp, err, nil
-				})
+				getAnArtifact(url_artifact.String())
 			}
 		}
 
 	}
 	return false
+}
+
+func getAnArtifact(url string) {
+	res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
+		resp, err := http.Get(url)
+		// assume all errors are temporary
+		return resp, err, nil
+	})
+
+	if err != nil {
+
+		log.Panicf("Exception thrown download an artifact \n%s", err)
+
+	} else {
+
+		fmt.Sscan("%d Retries", attempts)
+		fmt.Printf("%+v\n", res)
+
+	}
+
 }
