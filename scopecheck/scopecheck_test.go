@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestscopeCheck(t *testing.T) {
+func TestScopeCheck(t *testing.T) {
 
 	assert := assert.New(t)
 

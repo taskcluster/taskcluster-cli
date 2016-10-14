@@ -5,6 +5,7 @@ import (
 
 	"github.com/taskcluster/taskcluster-cli/extpoints"
 	tcclient "github.com/taskcluster/taskcluster-client-go"
+	"github.com/taskcluster/taskcluster-client-go/auth"
 	scopeutility "github.com/taskcluster/taskcluster-lib-scopes"
 )
 
@@ -22,38 +23,32 @@ func (scopecheck) Summary() string {
 	return "Shows whether a given scope satifies another."
 }
 
-func usage() string {
+func (scopecheck) Usage() string {
 	return `Usage:
   taskcluster scope-check <scope1> satifies <scope2>
 `
 }
 
-func (scopecheck) Usage() string {
-	return usage()
-}
+func expandScope(Auth *auth.Auth, scope2 string) (string, error) {
 
-type Auth tcclient.ConnectionData
+	scopeParams := &auth.SetOfScopes{
+		Scopes: scope2,
+	}
 
-func New(credentials *tcclient.Credentials) *Auth {
-	myAuth := Auth(tcclient.ConnectionData{
-		Credentials:  credentials,
-		BaseURL:      "https://auth.taskcluster.net/v1",
-		Authenticate: true,
-	})
-	return &myAuth
-}
+	response, errors := Auth.ExpandScopes(scopeParams)
+	if errors != nil {
+		fmt.Printf("Error expanding scopes: %s\n", err)
+		return false
+	}
 
-//may have duplicate of this method because this method will be written at some point in issue#31
-func (myAuth *Auth) expandScope(payload *SetOfScopes) (*SetOfScopes, error) {
-	connectionDetails := tcclient.ConnectionData(*myAuth)
-	responseObject, _, err := (&connectionDetails).APICall(payload, "GET", "/scopes/expand", new(SetOfScopes), nil)
-	return responseObject.(*SetOfScopes), err
+	_, expandedScopes := response.Scopes
+	return expandedScopes.(string), nil
 }
 
 func (scopecheck) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
 
-	command := argv["scope-check"].(string)
+	command := argv["SCOPECHECK"].(string)
 	provider := extpoints.CommandProviders()[command]
 	if provider == nil {
 		panic(fmt.Sprintf("Unknown command: %s", command))
@@ -61,36 +56,36 @@ func (scopecheck) Execute(context extpoints.Context) bool {
 	}
 
 	satisfies := argv("<satisfies>")
-	rscope := argv("<rscope>")
-	lscope := argv("<lscope>")
+	scope1 := argv("<scope1>").([]string)
+	scope2 := argv("<scope2>").([]string)
 
-	if argv["rscope"].(bool) {
+	if argv["scope1"].(bool) {
 
-		response := checkscopes(rscope, lscope)
+		response := checkscopes(argv, scope1, scope2)
 		fmt.Printf("%s\n", response)
 	}
 	return true
 }
 
-func checkscopes(rightScope *SetOfScopes, leftScope *SetOfScopes) string {
+func checkscopes(scope1 string, scope2 string) string {
 
-	if rightScope == leftScope {
-
+	auth := auth.New(&tcclient.Credentials{})
+	if scope1 == scope2 {
 		return "YES"
 	} else {
 
-		scope, errs := expandScope(leftScope)
+		scope, errs := expandScope(auth, scope2)
 		if errs != nil {
 			resp := "Error while trying to expand scopes"
 			return resp
 		}
 
-		if scopeutility.scopeMatch(rightScope, scope) {
+		if scopeutility.scopeMatch(scope1, scope) {
 			resp := "YES"
 			return resp
 		} else {
 			resp := "NO missing -"
-			resp += leftScope
+			resp += scope2
 			return resp
 		}
 
