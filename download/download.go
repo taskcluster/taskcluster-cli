@@ -71,10 +71,8 @@ func (download) Execute(context extpoints.Context) bool {
 					log.Panicf("Exception thrown download an artifact \n%s", err)
 				} else {
 					fmt.Printf("Number of attempts: %d\n", attempts)
-					_, _, out := checkContentLength(response)
-					if out == "Chunked" {
-						response.TransferEncoding = []string{out}
-					}
+					_, length, out := checkContentLength(response)
+					log.Printf("ContentLength %d with %s", length, out)
 				}
 			}
 		}
@@ -90,11 +88,8 @@ func (download) Execute(context extpoints.Context) bool {
 					log.Panicf("Exception thrown download an artifact \n%s", err)
 				} else {
 					fmt.Printf("Number of attempts: %d\n", attempts)
-					_, _, out := checkContentLength(response)
-					if out == "Chunked" {
-						response.TransferEncoding = []string{out}
-					}
-
+					_, length, out := checkContentLength(response)
+					log.Printf("ContentLength %d with %s", length, out)
 				}
 			}
 		}
@@ -116,11 +111,14 @@ func getAnArtifact(url string) (*http.Response, int, error) {
 
 func checkContentLength(res *http.Response) (error, int64, string) {
 
-	if res.ContentLength != 0 {
+	if res.ContentLength > 0 {
 		return nil, res.ContentLength, "Good"
 	}
 	if res.ContentLength == 0 {
 		//Means exactly none
+		if res.Body != nil {
+			return nil, res.ContentLength, "None"
+		}
 		return nil, res.ContentLength, "None"
 	}
 	if res.ContentLength < 0 {
@@ -128,12 +126,4 @@ func checkContentLength(res *http.Response) (error, int64, string) {
 		return nil, res.ContentLength, "Chunked"
 	}
 	return nil, 0, ""
-}
-
-func shouldFollowRedirect(statusCode int) bool {
-	switch statusCode {
-	case 301, 302, 303, 307:
-		return true
-	}
-	return false
 }
