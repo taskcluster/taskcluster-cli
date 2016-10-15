@@ -72,6 +72,10 @@ func (download) Execute(context extpoints.Context) bool {
 				} else {
 					fmt.Printf("Number of attempts: %d\n", attempts)
 					checkContentLength(response)
+					_, _, out := checkContentLength(response)
+					if out == "Chunked" {
+						response.TransferEncoding = []string{out}
+					}
 				}
 			}
 		}
