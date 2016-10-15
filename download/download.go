@@ -65,7 +65,14 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-				getAnArtifact(url_artifact.String())
+				response, attempts, err := getAnArtifact(url_artifact.String())
+
+				if err != nil {
+					log.Panicf("Exception thrown download an artifact \n%s", err)
+				} else {
+					fmt.Printf("Number of attempts: %d\n", attempts)
+					checkContentLength(response)
+				}
 			}
 		}
 		if runId == "" {
@@ -74,7 +81,17 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-				getAnArtifact(url_artifact.String())
+				response, attempts, err := getAnArtifact(url_artifact.String())
+
+				if err != nil {
+					log.Panicf("Exception thrown download an artifact \n%s", err)
+				} else {
+					fmt.Printf("Number of attempts: %d\n", attempts)
+					_, _, out := checkContentLength(response)
+					if out == "Chunked" {
+						response.TransferEncoding = []string{out}
+					}
+				}
 			}
 		}
 
@@ -82,22 +99,27 @@ func (download) Execute(context extpoints.Context) bool {
 	return false
 }
 
-func getAnArtifact(url string) {
+func getAnArtifact(url string) (*http.Response, int, error) {
 	res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
 		resp, err := http.Get(url)
 		// assume all errors are temporary
 		return resp, err, nil
 	})
+	return res, attempts, err
+}
 
-	if err != nil {
+func checkContentLength(res *http.Response) (error, int64, string) {
 
-		log.Panicf("Exception thrown download an artifact \n%s", err)
-
-	} else {
-
-		fmt.Printf("Number of attempts: %d\n", attempts)
-		fmt.Printf("%+v\n", res)
-
+	if res.ContentLength != 0 {
+		return nil, res.ContentLength, "Good"
 	}
-
+	if res.ContentLength == 0 {
+		//Means exactly none
+		return nil, res.ContentLength, "None"
+	}
+	if res.ContentLength < 0 {
+		//Means Unknown
+		return nil, res.ContentLength, "Chunked"
+	}
+	return nil, 0, ""
 }
