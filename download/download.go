@@ -109,11 +109,6 @@ func getAnArtifact(url string) (*http.Response, int, error) {
 		// assume all errors are temporary
 
 		//following redirect if there is a new url, link, redirect
-		if err != nil {
-			return resp, err, nil
-		} else if shouldFollowRedirect(resp.StatusCode) {
-			getAnArtifact(resp.Request.URL.String())
-		}
 		return resp, err, nil
 	})
 	return res, attempts, err
