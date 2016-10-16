@@ -96,7 +96,7 @@ func (download) Execute(context extpoints.Context) bool {
 		}
 
 	}
-	return false
+	return true
 }
 
 func getAnArtifact(url string) (*http.Response, int, error) {

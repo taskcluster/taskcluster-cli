@@ -32,9 +32,9 @@ func TestExecute(t *testing.T) {
 	myContext := extpoints.Context{}
 	myContext.Arguments = make(map[string]interface{})
 	myContext.Arguments["download"] = "download"
-	myContext.Arguments["<taskId"] = "S4acqev2RiqJRt4jk1u8Nw"
-	myContext.Arguments["<runId>"] = " "
-	myContext.Arguments["<artifact>"] = "public/test/xvfb/xvfb.log"
+	myContext.Arguments["<taskId>"] = "d4wgkX0WQ2WLcBC0cHlmNw"
+	myContext.Arguments["<runId>"] = ""
+	myContext.Arguments["<artifact>"] = "public/logs/live_backing.log"
 
 	response := dl.Execute(myContext)
 	t.Log(response)
