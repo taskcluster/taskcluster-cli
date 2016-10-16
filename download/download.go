@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexandrasp/taskcluster-cli/extpoints"
@@ -53,8 +54,8 @@ func (download) Execute(context extpoints.Context) bool {
 	} else {
 
 		permaCred := &tcclient.Credentials{
-			ClientID:    "tester",
-			AccessToken: "no-secret",
+			ClientID:    os.Getenv("TASKCLUSTER_CLIENT_ID"),
+			AccessToken: os.Getenv("TASKCLUSTER_ACCESS_TOKEN"),
 		}
 
 		userQueue := queue.New(permaCred)
@@ -117,7 +118,7 @@ func checkContentLength(res *http.Response) (error, int64, string) {
 	if res.ContentLength == 0 {
 		//Means exactly none
 		if res.Body != nil {
-			return nil, res.ContentLength, "None"
+			return nil, res.ContentLength, "None With Some Body Content"
 		}
 		return nil, res.ContentLength, "None"
 	}
