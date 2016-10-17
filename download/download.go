@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/alexandrasp/taskcluster-cli/extpoints"
@@ -66,7 +67,10 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-				response, attempts, err := getAnArtifact(url_artifact.String())
+
+				url_artifact := EnforceHttpsUrl(url_artifact.String())
+				fmt.Printf("NEW URL %s\n", url_artifact)
+				response, attempts, err := getAnArtifact(url_artifact)
 
 				if err != nil {
 					log.Panicf("Exception thrown download an artifact \n%s", err)
@@ -83,14 +87,18 @@ func (download) Execute(context extpoints.Context) bool {
 			if err != nil {
 				log.Panicf("Exception thrown signing URL \n%s", err)
 			} else {
-				response, attempts, err := getAnArtifact(url_artifact.String())
+
+				url_artifact := EnforceHttpsUrl(url_artifact.String())
+				//fmt.Printf("NEW URL %s\n", url_artifact)
+				response, attempts, err := getAnArtifact(url_artifact)
 
 				if err != nil {
 					log.Panicf("Exception thrown download an artifact \n%s", err)
 				} else {
 					fmt.Printf("Number of attempts: %d\n", attempts)
+					fmt.Printf("Content:::: \n %s \n", response.Header.Get("Content-Type"))
 					_, length, out := checkContentLength(response)
-					log.Printf("ContentLength %d with %s", length, out)
+					log.Printf("ContentLength %d with %s\n", length, out)
 				}
 			}
 		}
@@ -127,4 +135,29 @@ func checkContentLength(res *http.Response) (error, int64, string) {
 		return nil, res.ContentLength, "Chunked"
 	}
 	return nil, 0, ""
+}
+
+func StreamingArtifactFile(res *http.Response) bool {
+
+	return false
+
+}
+
+//function to enforce https if an artifact came without https assigned
+func EnforceHttpsUrl(url string) string {
+
+	indexHttps := strings.Index(url, "https://")
+	if indexHttps == 0 {
+		return url
+	}
+	if indexHttps == -1 {
+		indexHttp := strings.Index(url, "http://")
+		if indexHttp == 0 {
+			url = strings.Replace(url, "p", "ps", 3)
+		} else {
+			s := []string{"https://", url}
+			url = strings.Join(s, "")
+		}
+	}
+	return url
 }
