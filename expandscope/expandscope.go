@@ -1,4 +1,4 @@
-package scope
+package expandscope
 
 import (
 	"fmt"
@@ -9,55 +9,53 @@ import (
 )
 
 func init() {
-	extpoints.Register("scope", scope{})
+	extpoints.Register("expand-scope", expandscope{})
 }
 
-type scope struct{}
+type expandscope struct{}
 
-func (scope) ConfigOptions() map[string]extpoints.ConfigOption {
+func (expandscope) ConfigOptions() map[string]extpoints.ConfigOption {
 	return nil
 }
 
-func (scope) Summary() string {
+func (expandscope) Summary() string {
 	return "Expand the given scope set."
 }
 
 func usage() string {
 	return `Usage:
-  taskcluster scope expand <scope>...
+  taskcluster expand-scope <scope>...
 
-### Expand
 This command returns an expanded copy of the given scope set, with scopes
 implied by any roles included. The given scope set is specified as a space
 separated list of scopes.
 `
 }
 
-func (scope) Usage() string {
+func (expandscope) Usage() string {
 	return usage()
 }
 
-func (scope) Execute(context extpoints.Context) bool {
+func (expandscope) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
+	inputScopes := argv["<scope>"].([]string)
 
-	authCreds := tcclient.Credentials{}
-	myAuth := auth.New(&authCreds)
-	myAuth.Authenticate = false
-
-	if argv["expand"].(bool) {
-		return expandScope(argv, myAuth)
+	if argv["expand-scope"].(bool) {
+		return expandScope(inputScopes)
 	}
 	return true
 }
 
-func expandScope(argv map[string]interface{}, myAuth *auth.Auth) bool {
-	inputScopes := argv["<scope>"].([]string)
+func expandScope(inputScopes []string) bool {
+
+	a := auth.New(&tcclient.Credentials{})
+	a.Authenticate = false
 
 	params := &auth.SetOfScopes{
 		Scopes: inputScopes,
 	}
 
-	resp, err := myAuth.ExpandScopes(params)
+	resp, err := a.ExpandScopes(params)
 	if err != nil {
 		fmt.Printf("Error expanding scopes: %s\n", err)
 		return false
