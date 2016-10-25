@@ -2,11 +2,11 @@ package scopecheck
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/taskcluster/taskcluster-cli/extpoints"
-	tcclient "github.com/taskcluster/taskcluster-client-go"
+	"github.com/taskcluster/taskcluster-client-go"
 	"github.com/taskcluster/taskcluster-client-go/auth"
-	scopeutility "github.com/taskcluster/taskcluster-lib-scopes"
 )
 
 func init() {
@@ -25,70 +25,63 @@ func (scopecheck) Summary() string {
 
 func (scopecheck) Usage() string {
 	return `Usage:
-  taskcluster scope-check <scope1> satifies <scope2>
+  taskcluster scope-check <scope1> <scope2>
 `
 }
 
-func expandScope(Auth *auth.Auth, scope2 string) (string, error) {
+func expandScope(scope2 []string) (*auth.SetOfScopes, error) {
 
-	scopeParams := &auth.SetOfScopes{
+	a := auth.New(&tcclient.Credentials{})
+	a.Authenticate = false
+
+	scopes := &auth.SetOfScopes{
 		Scopes: scope2,
 	}
 
-	response, errors := Auth.ExpandScopes(scopeParams)
-	if errors != nil {
+	resp, err := a.ExpandScopes(scopes)
+	if err != nil {
 		fmt.Printf("Error expanding scopes: %s\n", err)
-		return false
+		return nil, err
 	}
 
-	_, expandedScopes := response.Scopes
-	return expandedScopes.(string), nil
+	return resp, err
 }
 
 func (scopecheck) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
+	scope1 := argv["<scope1>"].(string)
+	scope2 := argv["<scope2>"].(string)
 
-	command := argv["SCOPECHECK"].(string)
-	provider := extpoints.CommandProviders()[command]
-	if provider == nil {
-		panic(fmt.Sprintf("Unknown command: %s", command))
-		return false
-	}
-
-	satisfies := argv("<satisfies>")
-	scope1 := argv("<scope1>").([]string)
-	scope2 := argv("<scope2>").([]string)
-
-	if argv["scope1"].(bool) {
-
-		response := checkscopes(argv, scope1, scope2)
+	if argv["scope-check"].(bool) {
+		response := checkscopes(scope1, scope2)
 		fmt.Printf("%s\n", response)
 	}
 	return true
 }
 
-func checkscopes(scope1 string, scope2 string) string {
+func checkscopes(scope1 string, secondScope string) string {
 
-	auth := auth.New(&tcclient.Credentials{})
-	if scope1 == scope2 {
-		return "YES"
-	} else {
-
-		scope, errs := expandScope(auth, scope2)
+	var scope2 string
+	var containerforScope2 interface{} = secondScope
+	if strings.HasPrefix("secondScope", "assume:") {
+		expandedScope, errs := expandScope(containerforScope2.([]string))
 		if errs != nil {
 			resp := "Error while trying to expand scopes"
 			return resp
 		}
+		var containerforScope2 interface{} = expandedScope
+		scope2 = containerforScope2.(string)
 
-		if scopeutility.scopeMatch(scope1, scope) {
-			resp := "YES"
-			return resp
-		} else {
-			resp := "NO missing -"
-			resp += scope2
-			return resp
-		}
+	} else {
 
+		scope2 = containerforScope2.(string)
+	}
+
+	if scope1 == scope2 {
+		return "YES"
+	} else {
+		resp := "NO missing -"
+		return resp
 	}
 
 }

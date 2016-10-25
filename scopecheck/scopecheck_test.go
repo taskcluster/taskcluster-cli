@@ -10,10 +10,9 @@ func TestScopeCheck(t *testing.T) {
 
 	assert := assert.New(t)
 
-	myScopes := "['queue:ping']"
-	testscope := "['queue:test']"
-
-	assert.Equal("YES", checkscopes(myScopes, myScopes))
-	assert.Equal("NO missing -queue:test", checkscopes(myScopes, testscope))
+	myTestScope1 := "queue:ping"
+	myTestScope3 := "queue:test"
+	assert.Equal("YES", checkscopes(myTestScope1, myTestScope1))
+	assert.Equal("NO missing -", checkscopes(myTestScope1, myTestScope3))
 
 }
