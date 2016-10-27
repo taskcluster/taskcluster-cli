@@ -20,12 +20,12 @@ func (scopecheck) ConfigOptions() map[string]extpoints.ConfigOption {
 }
 
 func (scopecheck) Summary() string {
-	return "Shows whether a given scope satifies another."
+	return "Shows whether a given scope or set of scope satifies another."
 }
 
 func (scopecheck) Usage() string {
 	return `Usage:
-  taskcluster scope-check <scope1> <scope2>
+  taskcluster scope-check <scope1> satisfies <scope2>
 `
 }
 
@@ -50,31 +50,29 @@ func expandScope(scope2 []string) (*auth.SetOfScopes, error) {
 func (scopecheck) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
 	scope1 := argv["<scope1>"].(string)
-	scope2 := argv["<scope2>"].(string)
-
-	if argv["scope-check"].(bool) {
+	if argv["satisfies"] == true {
+		scope2 := argv["<scope2>"].(string)
 		response := checkscopes(scope1, scope2)
 		fmt.Printf("%s\n", response)
 	}
+
 	return true
 }
 
-func checkscopes(scope1 string, secondScope string) string {
-
-	var scope2 string
-	var containerforScope2 interface{} = secondScope
-	if strings.HasPrefix("secondScope", "assume:") {
-		expandedScope, errs := expandScope(containerforScope2.([]string))
+func checkscopes(scope1 string, scope2 string) string {
+	var secondScope interface{} = scope2
+	if strings.HasPrefix("scope2", "assume:") {
+		expandedScope, errs := expandScope(secondScope.([]string))
 		if errs != nil {
 			resp := "Error while trying to expand scopes"
 			return resp
 		}
-		var containerforScope2 interface{} = expandedScope
-		scope2 = containerforScope2.(string)
+		var expdscope interface{} = expandedScope
+		scope2 = expdscope.(string)
 
 	} else {
 
-		scope2 = containerforScope2.(string)
+		scope2 = secondScope.(string)
 	}
 
 	if scope1 == scope2 {
