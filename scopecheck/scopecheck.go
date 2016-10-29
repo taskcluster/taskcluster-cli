@@ -50,23 +50,23 @@ func expandScope(scope2 []string) (*auth.SetOfScopes, error) {
 func (scopecheck) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
 	scope1 := argv["<scope1>"].(string)
-	if argv["satisfies"] == true {
-		scope2 := argv["<scope2>"].(string)
-		response := checkscopes(scope1, scope2)
-		fmt.Printf("%s\n", response)
-	}
-
+	satisfies := argv["satisfies"]
+	scope2 := argv["<scope2>"].(string)
+	response := checkscopes(scope1, scope2)
+	fmt.Printf("%s\n", response)
 	return true
 }
 
 func checkscopes(scope1 string, scope2 string) string {
 	var secondScope interface{} = scope2
 	if strings.HasPrefix("scope2", "assume:") {
+		//cast scope2 to string array before calling api method expandingScope
 		expandedScope, errs := expandScope(secondScope.([]string))
 		if errs != nil {
 			resp := "Error while trying to expand scopes"
 			return resp
 		}
+		//Need it back to string for comparison with scope1
 		var expdscope interface{} = expandedScope
 		scope2 = expdscope.(string)
 
