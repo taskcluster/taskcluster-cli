@@ -50,11 +50,12 @@ func expandScope(scope2 []string) (*auth.SetOfScopes, error) {
 func (scopecheck) Execute(context extpoints.Context) bool {
 	argv := context.Arguments
 	scope1 := argv["<scope1>"].(string)
-	if argv["satisfies"] == true {
-		scope2 := argv["<scope2>"].(string)
-		response := checkscopes(scope1, scope2)
-		fmt.Printf("%s\n", response)
-	}
+	satisfies := argv["satisfies"]
+	_ = satisfies
+	scope2 := argv["<scope2>"].(string)
+	response := checkscopes(scope1, scope2)
+	fmt.Printf("%s\n", response)
+
 	return true
 }
 
