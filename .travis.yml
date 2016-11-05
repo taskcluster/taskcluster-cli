@@ -1,0 +1,55 @@
+language: go
+go:
+  - 1.6
+env:
+  - "MY_GOOS=linux MY_GOARCH=amd64"
+  - "MY_GOOS=darwin MY_GOARCH=amd64"
+  - "MY_GOOS=windows MY_GOARCH=amd64"
+  - "MY_GOOS=windows MY_GOARCH=386"
+
+before_install:
+  #we use 1.7 which isn't supported yet
+  #by downloading it in this section
+  
+  - curl -o go.tar.gz -sL https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
+  - tar -C $HOME -xf go.tar.gz
+  - rm go.tar.gz
+  - export GOROOT="${HOME}/go"
+  - export PATH="${GOROOT}/bin:${PATH}"
+  - export GOOS="${MY_GOOS}"
+  - export GOARCH="${MY_GOARCH}"
+  - go version
+  - go env
+  #end of download
+
+  - go get -u -v github.com/alecthomas/gometalinter
+  - go get code.google.com/p/go.tools/cmd/cover
+  - go get github.com/mattn/goveralls
+
+
+before_script:
+  - go fmt $$(go list ./...)
+  - go vet $$(go list ./...)
+
+install: 
+  - "go get -d -v ./..."
+  
+script:
+  - "go install -v ./..."
+  - go test -v -race $$(go list ./...)
+  - go test -v -cover -race $$(go list ./...)
+  - go test -covermode=count -coverprofile=profile.cov
+  - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused
+  - goveralls -coverprofile=profile.cov -service=travis-ci
+
+notifications:
+  irc:
+    channels:
+    - irc.mozilla.org#taskcluster-bots
+    on_success: change
+    on_failure: always
+    template:
+    - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+    - 'Change view : %{compare_url}'
+    - 'Build details : %{build_url}'
+    - 'Commit message : %{commit_message}'
