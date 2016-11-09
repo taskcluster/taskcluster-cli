@@ -2,8 +2,10 @@ package download
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -13,8 +15,6 @@ import (
 	"github.com/taskcluster/taskcluster-client-go"
 	"github.com/taskcluster/taskcluster-client-go/queue"
 )
-
-//"github.com/taskcluster/httpbackoff"
 
 func init() {
 	extpoints.Register("download", download{})
@@ -34,7 +34,7 @@ func usageDownload() string {
 	return `Usage:
 			taskcluster download [options]
 			Options:
-			<taskId> [<runId>] <artifact>
+			<taskID> [<runID>] <artifact>
 			`
 }
 
@@ -44,108 +44,99 @@ func (download) Usage() string {
 
 func (download) Execute(context extpoints.Context) bool {
 	command := context.Arguments["download"].(string)
-	taskId := context.Arguments["<taskId>"].(string)
-	runId := context.Arguments["<runId>"].(string)
+	taskID := context.Arguments["<taskID>"].(string)
+	runID := context.Arguments["<runID>"].(string)
 	artifact := context.Arguments["<artifact>"].(string)
-
 	provider := extpoints.CommandProviders()[command]
 	if provider == nil {
 		log.Panicf("Unknown command %s", command)
-
 	} else {
-
 		permaCred := &tcclient.Credentials{
 			ClientID:    os.Getenv("TASKCLUSTER_CLIENT_ID"),
 			AccessToken: os.Getenv("TASKCLUSTER_ACCESS_TOKEN"),
 		}
-
-		userQueue := queue.New(permaCred)
-
-		if runId != "" {
-			//get a artifact with runId parameter
-			url_artifact, err := userQueue.GetArtifact_SignedURL(taskId, runId, artifact, time.Second*10)
+		urlArtifact, err := getSignedUrlArtifact(taskID, runID, artifact, permaCred)
+		if err != nil {
+			log.Panicf("Exception thrown signing URL \n%s", err)
+		} else {
+			urlArtifact := EnforceHttpsUrl(urlArtifact.String())
+			response, attempts, err := getArtifact(urlArtifact)
 			if err != nil {
-				log.Panicf("Exception thrown signing URL \n%s", err)
+				log.Panicf("Exception thrown downloading an artifact \n%s", err)
 			} else {
-
-				url_artifact := EnforceHttpsUrl(url_artifact.String())
-				fmt.Printf("NEW URL %s\n", url_artifact)
-				response, attempts, err := getAnArtifact(url_artifact)
-
-				if err != nil {
-					log.Panicf("Exception thrown download an artifact \n%s", err)
+				fmt.Printf("Number of attempts: %d\n", attempts)
+				length, out, _ := checkContentLength(response)
+				verifyContentTypeUncompress(response)
+				log.Printf("ContentLength %d with %s\n", length, out)
+				if StreamingArtifactFile(response, taskID) {
+					fmt.Print("Save with sucess")
 				} else {
-					fmt.Printf("Number of attempts: %d\n", attempts)
-					_, length, out := checkContentLength(response)
-					log.Printf("ContentLength %d with %s", length, out)
+					fmt.Print("Error to save a file")
 				}
 			}
 		}
-		if runId == "" {
-			//get latest artifact without rundId parameter
-			url_artifact, err := userQueue.GetLatestArtifact_SignedURL(taskId, artifact, time.Second*10)
-			if err != nil {
-				log.Panicf("Exception thrown signing URL \n%s", err)
-			} else {
-
-				url_artifact := EnforceHttpsUrl(url_artifact.String())
-				//fmt.Printf("NEW URL %s\n", url_artifact)
-				response, attempts, err := getAnArtifact(url_artifact)
-
-				if err != nil {
-					log.Panicf("Exception thrown download an artifact \n%s", err)
-				} else {
-					fmt.Printf("Number of attempts: %d\n", attempts)
-					fmt.Printf("Content:::: \n %s \n", response.Header.Get("Content-Type"))
-					_, length, out := checkContentLength(response)
-					log.Printf("ContentLength %d with %s\n", length, out)
-				}
-			}
-		}
-
 	}
 	return true
 }
 
-func getAnArtifact(url string) (*http.Response, int, error) {
+//fuction to download a artifact with automatic retries
+func getArtifact(url string) (*http.Response, int, error) {
 	res, attempts, err := httpbackoff.Retry(func() (*http.Response, error, error) {
 		resp, err := http.Get(url)
 		// assume all errors are temporary
-
 		//following redirect if there is a new url, link, redirect
 		return resp, err, nil
 	})
 	return res, attempts, err
 }
 
-func checkContentLength(res *http.Response) (error, int64, string) {
+//function to get a signed URL to an artifact
+func getSignedUrlArtifact(taskID string, runID string, artifact string, permaCred *tcclient.Credentials) (*url.URL, error) {
+	userQueue := queue.New(permaCred)
+	if runID != "" {
+		//get an artifact with runID parameter
+		urlArtifact, err := userQueue.GetArtifact_SignedURL(taskID, runID, artifact, time.Second*10)
+		return urlArtifact, err
+	} else {
+		//get latest artifact without rundId parameter
+		urlArtifact, err := userQueue.GetLatestArtifact_SignedURL(taskID, artifact, time.Second*10)
+		return urlArtifact, err
+	}
+}
 
+//func to check an artifact content
+func checkContentLength(res *http.Response) (int64, string, error) {
 	if res.ContentLength > 0 {
-		return nil, res.ContentLength, "Good"
+		return res.ContentLength, "Good", nil
 	}
 	if res.ContentLength == 0 {
 		//Means exactly none
 		if res.Body != nil {
-			return nil, res.ContentLength, "None With Some Body Content"
+			return res.ContentLength, "Artifact content is empty", nil
 		}
-		return nil, res.ContentLength, "None"
+		return res.ContentLength, "None", nil
 	}
 	if res.ContentLength < 0 {
 		//Means Unknown
-		return nil, res.ContentLength, "Chunked"
+		return res.ContentLength, "Chunked", nil
 	}
-	return nil, 0, ""
+	return 0, "", nil
 }
 
-func StreamingArtifactFile(res *http.Response) bool {
-
-	return false
-
+//fuction to stream response struct to an output file
+func StreamingArtifactFile(res *http.Response, taskID string) bool {
+	fmt.Print("BODY:::", res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+	err = ioutil.WriteFile(taskID+".txt", body, 0644)
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 //function to enforce https if an artifact came without https assigned
 func EnforceHttpsUrl(url string) string {
-
 	indexHttps := strings.Index(url, "https://")
 	if indexHttps == 0 {
 		return url
@@ -160,4 +151,14 @@ func EnforceHttpsUrl(url string) string {
 		}
 	}
 	return url
+}
+
+//function to uncompress an artifact if it is bzip
+func verifyContentTypeUncompress(resp *http.Response) {
+	if strings.Index(resp.Header.Get("Content-Type"), "x-bzip2") != -1 {
+		fmt.Print(resp.Header.Get("Content-Encoding"))
+	}
+	if strings.Index(resp.Header.Get("Content-Type"), "zip") != -1 {
+		fmt.Print(resp.Header.Get("Content-Encoding"))
+	}
 }
