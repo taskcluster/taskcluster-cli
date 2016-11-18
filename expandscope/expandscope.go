@@ -2,6 +2,7 @@ package expandscope
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/taskcluster/taskcluster-cli/extpoints"
 	"github.com/taskcluster/taskcluster-client-go"
@@ -41,12 +42,13 @@ func (expandscope) Execute(context extpoints.Context) bool {
 	inputScopes := argv["<scope>"].([]string)
 
 	if argv["expand-scope"].(bool) {
-		return expandScope(inputScopes)
+		fmt.Printf("%s\n", expandScope(inputScopes))
+		return true
 	}
 	return true
 }
 
-func expandScope(inputScopes []string) bool {
+func expandScope(inputScopes []string) string {
 
 	a := auth.New(&tcclient.Credentials{})
 	a.Authenticate = false
@@ -58,11 +60,8 @@ func expandScope(inputScopes []string) bool {
 	resp, err := a.ExpandScopes(params)
 	if err != nil {
 		fmt.Printf("Error expanding scopes: %s\n", err)
-		return false
 	}
 
-	for _, s := range resp.Scopes {
-		fmt.Printf("%s\n", s)
-	}
-	return true
+	expandedScope := strings.Join(resp.Scopes, "\n")
+	return expandedScope
 }
