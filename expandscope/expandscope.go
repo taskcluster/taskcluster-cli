@@ -43,7 +43,7 @@ func (expandscope) Execute(context extpoints.Context) bool {
 	inputScopes := argv["<scope>"].([]string)
 
 	if argv["expand-scope"].(bool) {
-		fmt.Fprintf(os.Stderr, "%s\n", expandScope(inputScopes))
+		fmt.Printf("%s\n", expandScope(inputScopes))
 		return true
 	}
 	return true
