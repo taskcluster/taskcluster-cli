@@ -49,7 +49,6 @@ func (expandscope) Execute(context extpoints.Context) bool {
 }
 
 func expandScope(inputScopes []string) string {
-
 	a := auth.New(&tcclient.Credentials{})
 	a.Authenticate = false
 

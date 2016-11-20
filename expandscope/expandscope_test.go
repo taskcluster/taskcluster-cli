@@ -8,31 +8,33 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	assert "github.com/stretchr/testify/require"
 	"github.com/taskcluster/taskcluster-client-go/auth"
 )
 
-func getExpectedScopes(inputScopes []string) (string, error) {
+func getExpectedScopes(inputScopes []string, t *testing.T) string {
 	params := &auth.SetOfScopes{
 		Scopes: inputScopes,
 	}
-	var err error = nil
 
 	rawPayload, err := json.Marshal(params)
+	assert.NoError(t, err)
 	payload := bytes.NewReader(rawPayload)
 
 	req, err := http.NewRequest("GET", "https://auth.taskcluster.net/v1/scopes/expand", payload)
+	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := (&http.Client{}).Do(req)
+	assert.NoError(t, err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
 
 	var s auth.SetOfScopes
 	err = json.Unmarshal(body, &s)
-
 	expectedScopes := strings.Join(s.Scopes, "\n")
-	return expectedScopes, err
+	return expectedScopes
 }
 
 func TestExpandSingleScope(t *testing.T) {
@@ -40,10 +42,8 @@ func TestExpandSingleScope(t *testing.T) {
 
 	inputScopes := []string{"assume:project:taskcluster:tutorial"}
 	actualScopes := expandScope(inputScopes)
-	expectedScopes, err := getExpectedScopes(inputScopes)
-	if assert.NoError(err) {
-		assert.Equal(expectedScopes, actualScopes, "Error occured: the expected and the actual scopes should be equal.")
-	}
+	expectedScopes := getExpectedScopes(inputScopes, t)
+	assert.Equal(expectedScopes, actualScopes, "Error occured: the expected and the actual scopes should be equal.")
 }
 
 func TestExpandMultipleScope(t *testing.T) {
@@ -51,8 +51,6 @@ func TestExpandMultipleScope(t *testing.T) {
 
 	inputScopes := []string{"assume:project:taskcluster:tutorial", "assume:repo:hg.mozilla.org/try:*"}
 	actualScopes := expandScope(inputScopes)
-	expectedScopes, err := getExpectedScopes(inputScopes)
-	if assert.NoError(err) {
-		assert.Equal(expectedScopes, actualScopes, "Error occured: the expected and the actual scopes should be equal.")
-	}
+	expectedScopes := getExpectedScopes(inputScopes, t)
+	assert.Equal(expectedScopes, actualScopes, "Error occured: the expected and the actual scopes should be equal.")
 }
