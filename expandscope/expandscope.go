@@ -2,6 +2,7 @@ package expandscope
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/taskcluster/taskcluster-cli/extpoints"
@@ -42,7 +43,7 @@ func (expandscope) Execute(context extpoints.Context) bool {
 	inputScopes := argv["<scope>"].([]string)
 
 	if argv["expand-scope"].(bool) {
-		fmt.Printf("%s\n", expandScope(inputScopes))
+		fmt.Fprintf(os.Stderr, "%s\n", expandScope(inputScopes))
 		return true
 	}
 	return true
@@ -58,7 +59,7 @@ func expandScope(inputScopes []string) string {
 
 	resp, err := a.ExpandScopes(params)
 	if err != nil {
-		fmt.Printf("Error expanding scopes: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error expanding scopes: %s\n", err)
 	}
 
 	expandedScope := strings.Join(resp.Scopes, "\n")

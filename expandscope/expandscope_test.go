@@ -33,6 +33,7 @@ func getExpectedScopes(inputScopes []string, t *testing.T) string {
 
 	var s auth.SetOfScopes
 	err = json.Unmarshal(body, &s)
+	assert.NoError(t, err)
 	expectedScopes := strings.Join(s.Scopes, "\n")
 	return expectedScopes
 }
