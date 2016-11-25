@@ -3,4 +3,3 @@ package main
 
 import _ "github.com/taskcluster/taskcluster-cli/apis"
 import _ "github.com/taskcluster/taskcluster-cli/extpoints"
-import _ "github.com/taskcluster/taskcluster-cli/scopecheck"
