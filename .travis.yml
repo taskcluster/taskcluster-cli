@@ -8,7 +8,7 @@ env:
   - "MY_GOOS=windows MY_GOARCH=386"
 
 before_install:
-  #we use 1.7 which isn't supported yet
+  #we actually use 1.7 which isn't supported yet
   #by downloading it in this section
   
   - curl -o go.tar.gz -sL https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
