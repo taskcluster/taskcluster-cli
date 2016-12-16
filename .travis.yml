@@ -46,8 +46,8 @@ script:
   - go install -v ./...
   - go test -race .
   - go test -cover .
-  - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused"
-  - test $GOOS != windows || make build
+  - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused
+  - if test $GOOS != windows; then make build
   
 after_script:
 - "if test $GOOS != windows; then $HOME/gopath/bin/goveralls -coverprofile=coverage.report -service=travis-ci; fi"
