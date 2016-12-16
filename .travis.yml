@@ -12,7 +12,7 @@ env:
 os:
   - linux
   - osx
-  
+
 matrix:
   exclude:
     - env: "GOOS=linux GOARCH=amd64"
@@ -31,16 +31,16 @@ before_install:
   - go get github.com/mattn/goveralls
 
 before_script:
-  - go fmt $$(go list ./...)
-  - go vet $$(go list ./...)
+  - go fmt
+  - go vet
 
 install: 
   - "go get -d -v ./..."
   
 script:
-  - "go install -v ./..."
-  - go test -v -race $$(go list ./...)
-  - go test -v -cover -race $$(go list ./...)
+  - go install -v ./...
+  - go test -v -race
+  - go test -v -cover -race
   - go test -covermode=count -coverprofile=profile.cov
   - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused
   - goveralls -coverprofile=profile.cov -service=travis-ci
