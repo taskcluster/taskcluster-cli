@@ -24,26 +24,30 @@ matrix:
     - env: "GOOS=darwin GOARCH=amd64"
 
 before_install:
-  - go version
-  - go env
-  - go get -u -v github.com/alecthomas/gometalinter
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
+  - "go version"
+  - "go env"
+  - "go get github.com/mattn/goveralls"
+  - "go get -u golang.org/x/tools/cmd/cover"
+  - "go get -u github.com/alecthomas/gometalinter"
+  - "go get -u github.com/mitchellh/mapstructure"
+  - "go get -u github.com/onsi/ginkgo"
+  - "go get -u github.com/onsi/gomega"
+  - "export PATH=$HOME/gopath/bin:$PATH"
+  - "gometalinter --install"
 
 before_script:
-  - go fmt
-  - go vet
+  - "go fmt" 
+  - "go vet"
 
 install: 
   - "go get -d -v ./..."
   
 script:
-  - go install -v ./...
-  - go test -v -race
-  - go test -v -cover -race
-  - go test -covermode=count -coverprofile=profile.cov
-  - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused
-  - goveralls -coverprofile=profile.cov -service=travis-ci
+  - "go install -v ./..."
+  - "go test -race .
+  - "go test -cover ."
+  - "gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused"
+  - "t"est $GOOS != windows || make build"
   
 after_script:
 - "if test $GOOS != windows; then $HOME/gopath/bin/goveralls -coverprofile=coverage.report -service=travis-ci; fi"
