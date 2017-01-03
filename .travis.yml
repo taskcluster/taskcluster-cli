@@ -1,0 +1,65 @@
+language: go
+
+go:
+  - 1.7
+
+env:
+  - "MY_GOOS=linux MY_GOARCH=amd64"
+  - "MY_GOOS=darwin MY_GOARCH=amd64"
+  - "MY_GOOS=windows MY_GOARCH=amd64"
+  - "MY_GOOS=windows MY_GOARCH=386"
+
+os:
+  - linux
+  - osx
+
+matrix:
+  exclude:
+    - env: "GOOS=linux GOARCH=amd64"
+      os: osx
+    - env: "GOOS=windows GOARCH=amd64"
+      os: osx
+    - env: "GOOS=windows GOARCH=386"
+      os: osx
+    - env: "GOOS=darwin GOARCH=amd64"
+
+before_install:
+  - "go version"
+  - "go env"
+  - "go get github.com/mattn/goveralls"
+  - "go get -u golang.org/x/tools/cmd/cover"
+  - "go get -u github.com/alecthomas/gometalinter"
+  - "go get -u github.com/mitchellh/mapstructure"
+  - "go get -u github.com/onsi/ginkgo"
+  - "go get -u github.com/onsi/gomega"
+  - "export PATH=$HOME/gopath/bin:$PATH"
+  - "gometalinter --install"
+
+before_script:
+  - "go fmt" 
+  - "go vet"
+
+install: 
+  - "go get -d -v ./..."
+  
+script:
+  - go install -v ./...
+  - go test -race .
+  - go test -cover .
+  - gometalinter --disable-all --enable=gotype --enable=golint --enable=deadcode --enable=staticcheck --enable=deadcode --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple --enable=varcheck --enable=aligncheck --enable=errcheck --enable=ineffassign --enable=unconvert --enable=staticcheck --enable=goimports --enable=unused
+  - if test $GOOS != windows; then make build
+  
+after_script:
+- "if test $GOOS != windows; then $HOME/gopath/bin/goveralls -coverprofile=coverage.report -service=travis-ci; fi"
+
+notifications:
+  irc:
+    channels:
+    - irc.mozilla.org#taskcluster-bots
+    on_success: change
+    on_failure: always
+    template:
+    - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+    - 'Change view : %{compare_url}'
+    - 'Build details : %{build_url}'
+    - 'Commit message : %{commit_message}'
