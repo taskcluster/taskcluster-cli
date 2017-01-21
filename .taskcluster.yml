@@ -2,8 +2,8 @@
 version: 0
 # Top level metadata is always required
 metadata:
-  name: "TaskCluster GitHub Tests"
-  description: "All non-integration tests for taskcluster github"
+  name: "TaskCluster CLI Tests"
+  description: "TaskCluster CLI"
   owner: "{{ event.head.user.email }}" # the user who sent the pr/push e-mail will be inserted here
   source: "{{ event.head.repo.url }}"  # the repo where the pr came from will be inserted here
 tasks:
@@ -30,9 +30,9 @@ tasks:
         - '-c'
         - >-
           go get github.com/taskcluster/taskcluster-cli && cd
-          /go/src/github.com/taskcluster/taskcluster-cli && make
+          /go/src/github.com/taskcluster/taskcluster-cli && make && go test ./...
     metadata:
-      name: "TaskCluster GitHub Tests"
+      name: "Run the tests for TaskCluster CLI"
       description: "All non-integration tests"
       owner: "{{ event.head.user.email }}"
       source: "{{ event.head.repo.url }}"
