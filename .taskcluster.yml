@@ -1,0 +1,38 @@
+# The version is always required
+version: 0
+# Top level metadata is always required
+metadata:
+  name: "TaskCluster GitHub Tests"
+  description: "All non-integration tests for taskcluster github"
+  owner: "{{ event.head.user.email }}" # the user who sent the pr/push e-mail will be inserted here
+  source: "{{ event.head.repo.url }}"  # the repo where the pr came from will be inserted here
+tasks:
+  # What kind of environment will you need (docker, windows, etc...)
+  - provisionerId: "{{ taskcluster.docker.provisionerId }}"
+    # Be careful with spacing under the lines with dashes. Next line should begin under the word, not under the dash.
+    # Worker types correspond to particular machine types (aws size, etc...)
+    # worker types may be added by priveleged taskcluster users at https://tools.taskcluster.net/aws-provisioner
+    workerType: "{{ taskcluster.docker.workerType }}"
+    extra:
+      github:
+        # This must be set in order access GitHub info from inside your environment
+        env: true
+        # Events that will trigger this task
+        events:
+          - pull_request.opened
+          - pull_request.synchronize
+          - pull_request.reopened
+    payload:
+      maxRunTime: 3600
+      image: 'golang:1.8'
+      command:
+        - /bin/bash
+        - '-c'
+        - >-
+          go get github.com/taskcluster/taskcluster-cli && cd
+          /go/src/github.com/taskcluster/taskcluster-cli && make
+    metadata:
+      name: "TaskCluster GitHub Tests"
+      description: "All non-integration tests"
+      owner: "{{ event.head.user.email }}"
+      source: "{{ event.head.repo.url }}"
