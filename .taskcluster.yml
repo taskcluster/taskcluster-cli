@@ -30,9 +30,9 @@ tasks:
         - '-c'
         - >-
           go get github.com/taskcluster/taskcluster-cli && cd
-          /go/src/github.com/taskcluster/taskcluster-cli && make
+          /go/src/github.com/taskcluster/taskcluster-cli && make && go test ./...
     metadata:
-      name: "TaskCluster GitHub Tests"
+      name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
       owner: "{{ event.head.user.email }}"
       source: "{{ event.head.repo.url }}"
