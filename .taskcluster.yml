@@ -29,8 +29,8 @@ tasks:
         - /bin/bash
         - '-c'
         - >-
-          go get github.com/taskcluster/taskcluster-cli && cd
-          /go/src/github.com/taskcluster/taskcluster-cli && make && go test ./...
+          go get -t github.com/taskcluster/taskcluster-cli/... 
+          && cd  /go/src/github.com/taskcluster/taskcluster-cli make && go test ./...
     metadata:
       name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
