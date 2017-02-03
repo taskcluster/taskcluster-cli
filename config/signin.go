@@ -140,6 +140,9 @@ func (signin) Execute(context extpoints.Context) bool {
 	fmt.Println("Listening for a callback on: " + target)
 	webbrowser.Open(loginURL, webbrowser.NewWindow, true)
 
+	// Feedback for user
+	fmt.Println("Opening tab in browser. If tab does not open automatically please go to https://login.taskcluster.net/")
+
 	// Start serving
 	s.Serve(listener)
 
