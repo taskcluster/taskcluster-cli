@@ -141,7 +141,7 @@ func (signin) Execute(context extpoints.Context) bool {
 	webbrowser.Open(loginURL, webbrowser.NewWindow, true)
 
 	// Feedback for user
-	fmt.Println("Opening tab in browser. If tab does not open automatically please go to" + loginURL)
+	fmt.Println("Opening tab in browser. If tab does not open automatically please go to: " + loginURL)
 
 	// Start serving
 	s.Serve(listener)
