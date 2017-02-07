@@ -27,6 +27,11 @@ tasks:
           && git checkout {{ event.head.sha }} 
           && make 
           && go test ./...
+          && go get -u github.com/alecthomas/gometalinter 
+          && gometalinter --install 
+          && gometalinter --disable-all --enable=gotype --enable=golint 
+          --enable=deadcode --enable=staticcheck --enable=deadcode 
+          --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple
     metadata:
       name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
