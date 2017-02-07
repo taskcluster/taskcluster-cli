@@ -1,27 +1,27 @@
-package task_log
+package taskLog
 
 import "github.com/taskcluster/taskcluster-cli/extpoints"
 
-type task_log struct{}
+type taskLog struct{}
 
 func init() {
-	extpoints.Register("task-log", task_log{})
+	extpoints.Register("task-log", taskLog{})
 }
 
-func (task_log) ConfigOptions() map[string]extpoints.ConfigOption {
+func (taskLog) ConfigOptions() map[string]extpoints.ConfigOption {
 	return nil
 }
 
-func (task_log) Summary() string {
+func (taskLog) Summary() string {
 	return "Outputs the logs for <taskId> as generated, and exits when completes."
 }
 
-func (task_log) Usage() string {
+func (taskLog) Usage() string {
 	usage := "Usage: taskcluster task-log <taskId>\n"
 	return usage
 }
 
-func (task_log) Execute(context extpoints.Context) bool {
+func (taskLog) Execute(context extpoints.Context) bool {
 	// TODO :
 	// While task status is still running
 	// print logs

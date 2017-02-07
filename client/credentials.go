@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/tent/hawk-go"
+
+	tcclient "github.com/taskcluster/taskcluster-client-go"
 )
 
 // Credentials for taskcluster and methods to sign requests.
@@ -82,7 +84,7 @@ func (c *Credentials) newAuth(method, url string, h hash.Hash) (*hawk.Auth, erro
 	}
 	if e.Certificate != nil || e.AuthorizedScopes != nil {
 		s, _ := json.Marshal(e)
-		a.Ext = string(s)
+		a.Ext = base64.StdEncoding.EncodeToString(s)
 	}
 
 	// Set payload hash
@@ -118,4 +120,14 @@ func (c *Credentials) SignRequest(req *http.Request, hash hash.Hash) error {
 	s, err := c.SignHeader(req.Method, req.URL.String(), hash)
 	req.Header.Set("Authorization", s)
 	return err
+}
+
+// ToClientCredentials generates a credentials object that tcclient expects.
+func (c *Credentials) ToClientCredentials() *tcclient.Credentials {
+	return &tcclient.Credentials{
+		ClientID:         c.ClientID,
+		AccessToken:      c.AccessToken,
+		Certificate:      c.Certificate,
+		AuthorizedScopes: c.AuthorizedScopes,
+	}
 }
