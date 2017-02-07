@@ -28,7 +28,8 @@ tasks:
           && make 
           && go test ./...
           && go get -u github.com/alecthomas/gometalinter 
-          && gometalinter --install 
+          && gometalinter --install
+          && go get -u ./...
           && gometalinter --disable-all --enable=gotype --enable=golint 
           --enable=deadcode --enable=staticcheck --enable=deadcode 
           --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple
