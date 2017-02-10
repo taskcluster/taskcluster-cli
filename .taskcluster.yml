@@ -26,13 +26,13 @@ tasks:
           && git fetch {{ event.head.repo.url }} {{ event.head.ref }} 
           && make 
           && go get -u github.com/alecthomas/gometalinter 
-          && gometalinter --install
+          && gometalinter --install --force
           && go get -u ./...
           && git checkout {{ event.head.sha }} 
           && go test -v -race ./...
-          && gometalinter --disable-all --enable=gotype --enable=golint 
-          --enable=deadcode --enable=staticcheck --enable=deadcode 
-          --enable=misspell --enable=vet --enable=vetshadow --enable=gosimple
+          && gometalinter --vendor --disable-all --enable=gotype --enable=golint 
+          --enable=deadcode --enable=staticcheck --enable=misspell 
+          --enable=vet --enable=vetshadow --enable=gosimple
     metadata:
       name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
