@@ -1,78 +1,95 @@
 package task
 
 import (
-	"github.com/taskcluster/taskcluster-cli/extpoints"
+	"fmt"
+
+	"github.com/spf13/cobra"
+	"github.com/taskcluster/taskcluster-cli/config"
+	"github.com/taskcluster/taskcluster-cli/root"
 
 	tcclient "github.com/taskcluster/taskcluster-client-go"
 )
 
+var (
+	// Command is the root of the
+	Command = &cobra.Command{
+		Use:   "task",
+		Short: "Provides task-related actions and commands.",
+	}
+)
+
 func init() {
-	extpoints.Register("task", task{})
+	statusCmd := &cobra.Command{
+		Use:   "status",
+		Short: "Get the status of a task.",
+		RunE:  executeHelperE(runStatus),
+	}
+	statusCmd.Flags().BoolP("all-runs", "a", false, "Check all runs of the task.")
+	statusCmd.Flags().IntP("run", "r", -1, "Specifies which run to consider.")
+
+	artifactsCmd := &cobra.Command{
+		Use:   "artifacts",
+		Short: "Get the name of the artifacts of a task.",
+		RunE:  executeHelperE(runArtifacts),
+	}
+	artifactsCmd.Flags().IntP("run", "r", -1, "Specifies which run to consider.")
+
+	// Commands that fetch information
+	Command.AddCommand(
+		// status
+		statusCmd,
+		// name
+		&cobra.Command{
+			Use:   "name",
+			Short: "Get the name of a task.",
+			RunE:  executeHelperE(runName),
+		},
+		// group
+		&cobra.Command{
+			Use:   "group",
+			Short: "Get the groupID of a task.",
+			RunE:  executeHelperE(runGroup),
+		},
+		// artifacts
+		artifactsCmd,
+	)
+
+	// Commands that take actions
+	Command.AddCommand(
+		// cancel
+		&cobra.Command{
+			Use:   "cancel",
+			Short: "Get the groupID of a task.",
+			RunE:  executeHelperE(runCancel),
+		},
+		// cancel
+		&cobra.Command{
+			Use:   "rerun",
+			Short: "Reruns a task.",
+			RunE:  executeHelperE(runRerun),
+		},
+		// cancel
+		&cobra.Command{
+			Use:   "complete",
+			Short: "Completes the execution of a task.",
+			RunE:  executeHelperE(runComplete),
+		},
+	)
+
+	// Add the task subtree to the root.
+	root.Command.AddCommand(Command)
 }
 
-type task struct {
-}
+func executeHelperE(f Executor) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		var creds *tcclient.Credentials
+		if config.Credentials != nil {
+			creds = config.Credentials.ToClientCredentials()
+		}
 
-func (task) ConfigOptions() map[string]extpoints.ConfigOption {
-	return nil
-}
-
-func (task) Summary() string {
-	return "Task related actions."
-}
-
-func (task) Usage() string {
-	return `Task related actions.
-
-Usage:
-  taskcluster task status [--all-runs | --run ID] [--] <taskId>
-  taskcluster task name [--] <taskId>
-  taskcluster task group [--] <taskId>
-  taskcluster task artifacts [--run ID] [--] <taskId>
-  taskcluster task cancel [--] <taskId>
-  taskcluster task rerun [--] <taskId>
-  taskcluster task complete [--] <taskId>
-
-Options:
-  --all-runs  Use all runs instead of only the latest
-  --run ID    Use a specific run ID. By default, the latest run is selected
-`
-}
-
-func (t task) Execute(context extpoints.Context) bool {
-	args := context.Arguments
-
-	if args["status"].(bool) {
-		return executeSubCommand(context, t.runStatus)
+		if len(args) < 1 {
+			return fmt.Errorf("%s expects an argument (the taskID)", cmd.Name())
+		}
+		return f(creds, args, cmd.OutOrStdout(), cmd.Flags())
 	}
-	if args["name"].(bool) {
-		return executeSubCommand(context, t.runName)
-	}
-	if args["group"].(bool) {
-		return executeSubCommand(context, t.runGroup)
-	}
-	if args["artifacts"].(bool) {
-		return executeSubCommand(context, t.runArtifacts)
-	}
-	if args["cancel"].(bool) {
-		return executeSubCommand(context, t.runCancel)
-	}
-	if args["rerun"].(bool) {
-		return executeSubCommand(context, t.runRerun)
-	}
-	if args["complete"].(bool) {
-		return executeSubCommand(context, t.runComplete)
-	}
-
-	return false
-}
-
-// executeSubCommand executes the given SubCommand.
-func executeSubCommand(context extpoints.Context, subCommand SubCommand) bool {
-	var c *tcclient.Credentials
-	if context.Credentials != nil {
-		c = context.Credentials.ToClientCredentials()
-	}
-
-	return subCommand(c, context.Arguments)
 }
