@@ -17,14 +17,13 @@ var (
 	}
 
 	// VersionNumber is a formatted string with the version information.
-	VersionNumber = fmt.Sprintf("%d.%d.%d", 1, 0, 0)
+	VersionNumber = "1.0.0"
 )
-
 
 func init() {
 	root.Command.AddCommand(Command)
 }
 
-func printVersion(_ *cobra.Command, _ []string) {
-	fmt.Printf("taskcluster (TaskCluster CLI) version %s\n", VersionNumber)
+func printVersion(cmd *cobra.Command, _ []string) {
+	fmt.Fprintf(cmd.OutOrStdout(), "taskcluster (TaskCluster CLI) version %s\n", VersionNumber)
 }
