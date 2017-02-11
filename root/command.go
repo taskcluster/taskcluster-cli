@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	// root.Command
+	// Command is the root of the command tree.
 	Command *cobra.Command
 )
 
