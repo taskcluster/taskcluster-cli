@@ -3,41 +3,19 @@ package task
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"strconv"
+	"io"
 
+	"github.com/spf13/pflag"
 	tcclient "github.com/taskcluster/taskcluster-client-go"
 	"github.com/taskcluster/taskcluster-client-go/queue"
 )
 
 type arguments map[string]interface{}
 
-// SubCommand represents the function interface of the task subcommand.
-type SubCommand func(credentials *tcclient.Credentials, args arguments) bool
+// Executor represents the function interface of the task subcommand.
+type Executor func(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error
 
-func extractRunID(max int, param interface{}) (runID int, err error) {
-	runID = max
-
-	if param == nil {
-		return
-	}
-
-	if str, ok := param.(string); ok {
-		var id int
-		if id, err = strconv.Atoi(str); err == nil {
-			if id >= 0 && id < max {
-				runID = id
-			} else {
-				err = fmt.Errorf("given runID is out of range: %v", id)
-			}
-		}
-	} else {
-		err = fmt.Errorf("runID is not a string: %v", str)
-	}
-
-	return
-}
-
+// getRunStatusString takes the state and resolved strings and crafts a printable summary string.
 func getRunStatusString(state, resolved string) string {
 	if resolved != "" {
 		return fmt.Sprintf("%s '%s'", state, resolved)
@@ -46,78 +24,85 @@ func getRunStatusString(state, resolved string) string {
 	return state
 }
 
-func (task) runStatus(credentials *tcclient.Credentials, args arguments) bool {
+// runStatus gets the status of run(s) of a given task.
+func runStatus(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	s, err := q.Status(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not get the status of the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not get the status of the task %s: %v", taskID, err)
 	}
 
-	if args["--all-runs"].(bool) {
+	allRuns, _ := flagSet.GetBool("all-runs")
+	runID, _ := flagSet.GetInt("run")
+
+	if allRuns && runID != -1 {
+		return fmt.Errorf("can't specify both all-runs and a specific run")
+	}
+
+	if allRuns {
 		for _, r := range s.Status.Runs {
-			fmt.Printf("Run #%d: %s\n", r.RunID, getRunStatusString(r.State, r.ReasonResolved))
+			fmt.Fprintf(out, "Run #%d: %s\n", r.RunID, getRunStatusString(r.State, r.ReasonResolved))
 		}
-		return true
+		return nil
 	}
 
-	runID, err := extractRunID(len(s.Status.Runs)-1, args["--run"])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: invalid runID: %v\n", err)
-		return false
+	if runID >= len(s.Status.Runs) {
+		return fmt.Errorf("there is no run #%v", runID)
+	}
+	if runID == -1 {
+		runID = len(s.Status.Runs) - 1
 	}
 
-	fmt.Println(getRunStatusString(s.Status.Runs[runID].State, s.Status.Runs[runID].ReasonResolved))
-
-	return true
+	fmt.Fprintln(out, getRunStatusString(s.Status.Runs[runID].State, s.Status.Runs[runID].ReasonResolved))
+	return nil
 }
 
-func (task) runName(credentials *tcclient.Credentials, args arguments) bool {
+// runName gets the name of a given task.
+func runName(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	t, err := q.Task(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not get the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not get the task %s: %v", taskID, err)
 	}
 
-	fmt.Println(t.Metadata.Name)
-
-	return true
+	fmt.Fprintln(out, t.Metadata.Name)
+	return nil
 }
 
-func (task) runGroup(credentials *tcclient.Credentials, args arguments) bool {
+// runGroup gets the groupID of a given task.
+func runGroup(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	t, err := q.Task(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not get the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not get the task %s: %v", taskID, err)
 	}
 
-	fmt.Println(t.TaskGroupID)
-
-	return true
+	fmt.Fprintln(out, t.TaskGroupID)
+	return nil
 }
 
-func (task) runArtifacts(credentials *tcclient.Credentials, args arguments) bool {
+// runArtifacts gets the name of the artificats for a given task and run.
+func runArtifacts(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	s, err := q.Status(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not get the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not get the status of the task %s: %v", taskID, err)
 	}
 
-	runID, err := extractRunID(len(s.Status.Runs)-1, args["--run"])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: invalid runID: %v\n", err)
-		return false
+	runID, _ := flagSet.GetInt("run")
+	if runID >= len(s.Status.Runs) {
+		return fmt.Errorf("there is no run #%v", runID)
+	}
+	if runID == -1 {
+		runID = len(s.Status.Runs) - 1
 	}
 
 	buf := bytes.NewBufferString("")
@@ -125,8 +110,7 @@ func (task) runArtifacts(credentials *tcclient.Credentials, args arguments) bool
 	for {
 		a, err := q.ListArtifacts(taskID, fmt.Sprint(runID), continuation, "")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: could not fetch artifacts for task %s run %v: %v", taskID, runID, err)
-			return false
+			return fmt.Errorf("could not fetch artifacts for task %s run %v: %v", taskID, runID, err)
 		}
 
 		for _, ar := range a.Artifacts {
@@ -139,51 +123,48 @@ func (task) runArtifacts(credentials *tcclient.Credentials, args arguments) bool
 		}
 	}
 
-	buf.WriteTo(os.Stdout)
-
-	return true
+	buf.WriteTo(out)
+	return nil
 }
 
-func (task) runCancel(credentials *tcclient.Credentials, args arguments) bool {
+// runCancel cancels the runs of a given task.
+func runCancel(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	c, err := q.CancelTask(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not cancel the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not cancel the task %s: %v", taskID, err)
 	}
 
 	run := c.Status.Runs[len(c.Status.Runs)-1]
-	fmt.Println(getRunStatusString(run.State, run.ReasonResolved))
-
-	return true
+	fmt.Fprintln(out, getRunStatusString(run.State, run.ReasonResolved))
+	return nil
 }
 
-func (task) runRerun(credentials *tcclient.Credentials, args arguments) bool {
+// runRerun re-runs a given task.
+func runRerun(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	c, err := q.RerunTask(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not rerun the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not rerun the task %s: %v", taskID, err)
 	}
 
 	run := c.Status.Runs[len(c.Status.Runs)-1]
-	fmt.Println(getRunStatusString(run.State, run.ReasonResolved))
-
-	return true
+	fmt.Fprintln(out, getRunStatusString(run.State, run.ReasonResolved))
+	return nil
 }
 
-func (task) runComplete(credentials *tcclient.Credentials, args arguments) bool {
+// runComplete completes a given task.
+func runComplete(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
 	q := queue.New(credentials)
-	taskID := args["<taskId>"].(string)
+	taskID := args[0]
 
 	s, err := q.Status(taskID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not get the status of the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not get the status of the task %s: %v", taskID, err)
 	}
 
 	c, err := q.ClaimTask(taskID, fmt.Sprint(len(s.Status.Runs)-1), &queue.TaskClaimRequest{
@@ -191,8 +172,7 @@ func (task) runComplete(credentials *tcclient.Credentials, args arguments) bool 
 		WorkerID:    "taskcluster-cli",
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not claim the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not claim the task %s: %v", taskID, err)
 	}
 
 	wq := queue.New(&tcclient.Credentials{
@@ -202,11 +182,9 @@ func (task) runComplete(credentials *tcclient.Credentials, args arguments) bool 
 	})
 	r, err := wq.ReportCompleted(taskID, fmt.Sprint(c.RunID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: could not complete the task %s: %v\n", taskID, err)
-		return false
+		return fmt.Errorf("could not complete the task %s: %v", taskID, err)
 	}
 
-	fmt.Println(getRunStatusString(r.Status.Runs[c.RunID].State, r.Status.Runs[c.RunID].ReasonResolved))
-
-	return true
+	fmt.Fprintln(out, getRunStatusString(r.Status.Runs[c.RunID].State, r.Status.Runs[c.RunID].ReasonResolved))
+	return nil
 }
