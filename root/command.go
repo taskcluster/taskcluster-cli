@@ -13,9 +13,9 @@ var (
 
 func init() {
 	Command = &cobra.Command{
-		Use: "taskcluster",
+		Use:   "taskcluster",
 		Short: "Short description of TaskCluster",
-		Long: "Long description of TaskCluster",
+		Long:  "Long description of TaskCluster",
 		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Printf("Hello tc peeps\n")
 		},

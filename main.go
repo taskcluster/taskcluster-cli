@@ -13,8 +13,8 @@ func main() {
 
 	// gentlemen, START YOUR ENGINES
 	if err := root.Command.Execute(); err != nil {
-		os.Exit(0);
+		os.Exit(0)
 	} else {
-		os.Exit(1);
+		os.Exit(1)
 	}
 }

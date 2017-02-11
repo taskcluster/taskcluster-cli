@@ -6,9 +6,9 @@ import (
 	"regexp"
 
 	uuidlib "github.com/pborman/uuid"
+	"github.com/spf13/cobra"
 	sluglib "github.com/taskcluster/slugid-go/slugid"
 	"github.com/taskcluster/taskcluster-cli/root"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -34,37 +34,37 @@ var (
 func init() {
 	// the basic slugid command
 	slugid := &cobra.Command{
-		Use: "slugid",
+		Use:   "slugid",
 		Short: "Generates V4 UUIDs and encodes/decodes them from/to 22 character URL-safe base64 slugs.",
 	}
 	root.Command.AddCommand(slugid)
 
 	// v4
 	slugid.AddCommand(&cobra.Command{
-		Use: "v4",
+		Use:   "v4",
 		Short: "Generates the slug of a V4 UUID.",
-		Run: generateV4,
+		Run:   generateV4,
 	})
 
 	// nice
 	slugid.AddCommand(&cobra.Command{
-		Use: "nice",
+		Use:   "nice",
 		Short: "Generates the slug of a V4 UUID in a 'nice' format.",
-		Run: generateNice,
+		Run:   generateNice,
 	})
 
 	// decode
 	slugid.AddCommand(&cobra.Command{
-		Use: "decode",
+		Use:   "decode",
 		Short: "Decodes a slug into a UUID.",
-		RunE: decode,
+		RunE:  decode,
 	})
 
 	// encode
 	slugid.AddCommand(&cobra.Command{
-		Use: "encode",
+		Use:   "encode",
 		Short: "Encode an UUID into a slug.",
-		RunE: encode,
+		RunE:  encode,
 	})
 }
 
