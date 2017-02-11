@@ -1,13 +1,14 @@
 package slugid
 
 import (
+	"errors"
 	"fmt"
-	//"os"
 	"regexp"
 
 	uuidlib "github.com/pborman/uuid"
 	"github.com/spf13/cobra"
 	sluglib "github.com/taskcluster/slugid-go/slugid"
+
 	"github.com/taskcluster/taskcluster-cli/root"
 )
 
@@ -29,73 +30,87 @@ var (
 
 	// RegexpUUIDNice is the regular expression that all "nice" UUIDs should conform to
 	RegexpUUIDNice = regexp.MustCompile("^[0-7][a-f0-9]{7}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$")
-)
 
-func init() {
-	// the basic slugid command
-	slugid := &cobra.Command{
+	// Command is the root of the slugid subtree.
+	Command = &cobra.Command{
 		Use:   "slugid",
 		Short: "Generates V4 UUIDs and encodes/decodes them from/to 22 character URL-safe base64 slugs.",
 	}
-	root.Command.AddCommand(slugid)
+)
 
-	// v4
-	slugid.AddCommand(&cobra.Command{
-		Use:   "v4",
-		Short: "Generates the slug of a V4 UUID.",
-		Run:   generateV4,
-	})
+func init() {
+	Command.AddCommand(
+		// v4
+		&cobra.Command{
+			Use:   "v4",
+			Short: "Generates a V4 UUID and output its slug.",
+			Run:   printHelper(generateV4),
+		},
+		// nice
+		&cobra.Command{
+			Use:   "nice",
+			Short: "Generates a 'nice' V4 UUID and output its slug.",
+			Run:   printHelper(generateNice),
+		},
+		// decode
+		&cobra.Command{
+			Use:   "decode",
+			Short: "Decodes a slug into a UUID.",
+			RunE:  decode,
+		},
+		// encode
+		&cobra.Command{
+			Use:   "encode",
+			Short: "Encode an UUID into a slug.",
+			RunE:  encode,
+		},
+	)
 
-	// nice
-	slugid.AddCommand(&cobra.Command{
-		Use:   "nice",
-		Short: "Generates the slug of a V4 UUID in a 'nice' format.",
-		Run:   generateNice,
-	})
+	// Add the slugid subtree to the root.
+	root.Command.AddCommand(Command)
+}
 
-	// decode
-	slugid.AddCommand(&cobra.Command{
-		Use:   "decode",
-		Short: "Decodes a slug into a UUID.",
-		RunE:  decode,
-	})
-
-	// encode
-	slugid.AddCommand(&cobra.Command{
-		Use:   "encode",
-		Short: "Encode an UUID into a slug.",
-		RunE:  encode,
-	})
+// printHelper wraps simple functions and prints their result.
+func printHelper(f func() string) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, _ []string) {
+		fmt.Fprintln(cmd.OutOrStdout(), f())
+	}
 }
 
 // generateV4 generates a normal v4 uuid
-func generateV4(_ *cobra.Command, _ []string) {
-	fmt.Println(sluglib.V4())
+func generateV4() string {
+	return sluglib.V4()
 }
 
-// generateNice generates uuid with "nice" properties
-func generateNice(_ *cobra.Command, _ []string) {
-	fmt.Println(sluglib.Nice())
+// generateNice generates a v4 uuid with "nice" properties
+func generateNice() string {
+	return sluglib.Nice()
 }
 
 // decode decodes a slug into a uuid
-func decode(_ *cobra.Command, args []string) error {
+func decode(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
+		return errors.New("decode requires one argument")
+	}
 	slug := args[0]
 
 	// nice slugs are just a subset of all slugs, which must match V4 pattern
 	// this slug may be nice or not; we don't know, so use general pattern
 	match := RegexpSlugV4.MatchString(slug)
-	if !match {
+	if match == false {
 		return fmt.Errorf("invalid slug format '%s'", slug)
 	}
 
 	// and decode
-	fmt.Println(sluglib.Decode(slug))
+	fmt.Fprintln(cmd.OutOrStdout(), sluglib.Decode(slug))
 	return nil
 }
 
-// encodes uuid into a slug
-func encode(_ *cobra.Command, args []string) error {
+// encode encodes a uuid into a slug
+func encode(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
+		return errors.New("encode requires one argument")
+	}
 	uuid := args[0]
 
 	// nice slugs are just a subset of all slugs, which must match V4 pattern
@@ -106,6 +121,6 @@ func encode(_ *cobra.Command, args []string) error {
 	}
 
 	// the uuid string needs to be parsed into uuidlib.UUID before encoding
-	fmt.Println(sluglib.Encode(uuidlib.Parse(uuid)))
+	fmt.Fprintln(cmd.OutOrStdout(), sluglib.Encode(uuidlib.Parse(uuid)))
 	return nil
 }
