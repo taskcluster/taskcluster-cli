@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/taskcluster/taskcluster-cli/root"
+
 	uuidlib "github.com/pborman/uuid"
 	"github.com/spf13/cobra"
 	sluglib "github.com/taskcluster/slugid-go/slugid"
-
-	"github.com/taskcluster/taskcluster-cli/root"
 )
 
 var (
