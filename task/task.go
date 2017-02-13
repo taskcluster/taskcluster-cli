@@ -20,7 +20,7 @@ var (
 
 func init() {
 	statusCmd := &cobra.Command{
-		Use:   "status",
+		Use:   "status <taskId>",
 		Short: "Get the status of a task.",
 		RunE:  executeHelperE(runStatus),
 	}
@@ -28,7 +28,7 @@ func init() {
 	statusCmd.Flags().IntP("run", "r", -1, "Specifies which run to consider.")
 
 	artifactsCmd := &cobra.Command{
-		Use:   "artifacts",
+		Use:   "artifacts <taskId>",
 		Short: "Get the name of the artifacts of a task.",
 		RunE:  executeHelperE(runArtifacts),
 	}
@@ -40,13 +40,13 @@ func init() {
 		statusCmd,
 		// name
 		&cobra.Command{
-			Use:   "name",
+			Use:   "name <taskId>",
 			Short: "Get the name of a task.",
 			RunE:  executeHelperE(runName),
 		},
 		// group
 		&cobra.Command{
-			Use:   "group",
+			Use:   "group <taskId>",
 			Short: "Get the groupID of a task.",
 			RunE:  executeHelperE(runGroup),
 		},
@@ -58,19 +58,19 @@ func init() {
 	Command.AddCommand(
 		// cancel
 		&cobra.Command{
-			Use:   "cancel",
+			Use:   "cancel <taskId>",
 			Short: "Get the groupID of a task.",
 			RunE:  executeHelperE(runCancel),
 		},
 		// cancel
 		&cobra.Command{
-			Use:   "rerun",
+			Use:   "rerun <taskId>",
 			Short: "Reruns a task.",
 			RunE:  executeHelperE(runRerun),
 		},
 		// cancel
 		&cobra.Command{
-			Use:   "complete",
+			Use:   "complete <taskId>",
 			Short: "Completes the execution of a task.",
 			RunE:  executeHelperE(runComplete),
 		},
@@ -88,7 +88,7 @@ func executeHelperE(f Executor) func(*cobra.Command, []string) error {
 		}
 
 		if len(args) < 1 {
-			return fmt.Errorf("%s expects an argument (the taskID)", cmd.Name())
+			return fmt.Errorf("%s expects argument <taskId>", cmd.Name())
 		}
 		return f(creds, args, cmd.OutOrStdout(), cmd.Flags())
 	}
