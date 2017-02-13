@@ -31,7 +31,7 @@ tasks:
           && git checkout {{ event.head.sha }} 
           && go test -v -race ./...
           && gometalinter --vendor --disable-all --enable=gotype --enable=golint 
-          --enable=deadcode --enable=staticcheck --enable=misspell 
+          --enable=deadcode --enable=staticcheck 
           --enable=vet --enable=vetshadow --enable=gosimple ./...
     metadata:
       name: "TaskCluster .taskcluster.yml file"
