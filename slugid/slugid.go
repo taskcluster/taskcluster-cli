@@ -72,9 +72,8 @@ func init() {
 // --nice generates a slug that respects tighter format constraints
 func generate(cmd *cobra.Command, args []string) {
 	// v4 and nice
-	if cmd.Flags().Lookup("nice").Value.String() == "true" {
+	if nice, _ := cmd.Flags().GetBool("nice"); nice {
 		fmt.Fprintln(cmd.OutOrStdout(), sluglib.Nice())
-
 	} else { // v4 but not nice
 		fmt.Fprintln(cmd.OutOrStdout(), sluglib.V4())
 	}
