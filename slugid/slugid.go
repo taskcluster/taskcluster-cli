@@ -39,28 +39,26 @@ var (
 )
 
 func init() {
+	// the generate command and its 'nice' flag
+	generate := &cobra.Command{
+		Use:   "generate",
+		Short: "Generate a V4 UUID and output its slug.",
+		Run:   generate,
+	}
+	generate.Flags().BoolP("nice", "n", false, "Generate a 'nice' slug.")
+
+	// add commands
 	Command.AddCommand(
-		// v4
-		&cobra.Command{
-			Use:   "v4",
-			Short: "Generates a V4 UUID and output its slug.",
-			Run:   printHelper(generateV4),
-		},
-		// nice
-		&cobra.Command{
-			Use:   "nice",
-			Short: "Generates a 'nice' V4 UUID and output its slug.",
-			Run:   printHelper(generateNice),
-		},
+		generate,
 		// decode
 		&cobra.Command{
-			Use:   "decode",
-			Short: "Decodes a slug into a UUID.",
+			Use:   "decode <slug>",
+			Short: "Decode a slug into a UUID.",
 			RunE:  decode,
 		},
 		// encode
 		&cobra.Command{
-			Use:   "encode",
+			Use:   "encode <uuid>",
 			Short: "Encode an UUID into a slug.",
 			RunE:  encode,
 		},
@@ -70,27 +68,22 @@ func init() {
 	root.Command.AddCommand(Command)
 }
 
-// printHelper wraps simple functions and prints their result.
-func printHelper(f func() string) func(*cobra.Command, []string) {
-	return func(cmd *cobra.Command, _ []string) {
-		fmt.Fprintln(cmd.OutOrStdout(), f())
+// generate generates the slug of a v4 uuid
+// --nice generates a slug that respects tighter format constraints
+func generate(cmd *cobra.Command, args []string) {
+	// v4 and nice
+	if cmd.Flags().Lookup("nice").Value.String() == "true" {
+		fmt.Fprintln(cmd.OutOrStdout(), sluglib.Nice())
+
+	} else { // v4 but not nice
+		fmt.Fprintln(cmd.OutOrStdout(), sluglib.V4())
 	}
-}
-
-// generateV4 generates a normal v4 uuid
-func generateV4() string {
-	return sluglib.V4()
-}
-
-// generateNice generates a v4 uuid with "nice" properties
-func generateNice() string {
-	return sluglib.Nice()
 }
 
 // decode decodes a slug into a uuid
 func decode(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
-		return errors.New("decode requires one argument")
+		return errors.New("decode requires argument <slug>")
 	}
 	slug := args[0]
 
@@ -109,7 +102,7 @@ func decode(cmd *cobra.Command, args []string) error {
 // encode encodes a uuid into a slug
 func encode(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
-		return errors.New("encode requires one argument")
+		return errors.New("encode requires argument <uuid>")
 	}
 	uuid := args[0]
 
