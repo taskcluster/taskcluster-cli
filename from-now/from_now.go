@@ -69,39 +69,46 @@ func parseTime(str string) (timeOffset, error) {
 	offset := timeOffset{}
 
 	// Regexp taken from github.com/taskcluster/taskcluster-client/blob/master/lib/parsetime.js
-	reg := []string{
-		"^(\\s*(-|\\+))?",
-		"(\\s*(\\d+)\\s*y((ears?)|r)?)?",
-		"(\\s*(\\d+)\\s*mo(nths?)?)?",
-		"(\\s*(\\d+)\\s*w((eeks?)|k)?)?",
-		"(\\s*(\\d+)\\s*d(ays?)?)?",
-		"(\\s*(\\d+)\\s*h((ours?)|r)?)?",
-		"(\\s*(\\d+)\\s*min(utes?)?)?",
-		"(\\s*(\\d+)\\s*s(ec(onds?)?)?)?",
-		"\\s*$",
-	}
-
-	re := regexp.MustCompile(strings.Join(reg, ""))
+	re := regexp.MustCompile(
+		// beginning and sign (group 1)
+		`^(-|\+)?` +
+			// years offset (group 3)
+			`(\s*(\d+)\s*y((ears?)|r)?)?` +
+			// months offset (group 7)
+			`(\s*(\d+)\s*mo(nths?)?)?` +
+			// weeks offset (group 10)
+			`(\s*(\d+)\s*w((eeks?)|k)?)?` +
+			// days offset (group 14)
+			`(\s*(\d+)\s*d(ays?)?)?` +
+			// hours offset (group 17)
+			`(\s*(\d+)\s*h((ours?)|r)?)?` +
+			// minutes offset (group 21)
+			`(\s*(\d+)\s*min(utes?)?)?` +
+			// seconds offset (group 24)
+			`(\s*(\d+)\s*s(ec(onds?)?)?)?` +
+			// the end
+			`$`,
+	)
 
 	if !re.MatchString(str) {
 		return offset, errors.New("invalid input")
 	}
 
-	groupMatches := re.FindAllStringSubmatch(str, -1)
+	groupMatches := re.FindAllStringSubmatch(strings.TrimSpace(str), -1)
 
 	// Add negative support after we figure out what we are doing with docopt because it complains about the '-'
 	// neg := 1
-	// if groupMatches[0][2] == "-" {
+	// if groupMatches[0][1] == "-" {
 	// 	neg = -1
 	// }
 
-	offset.years = atoiHelper(groupMatches[0][4])
-	offset.months = atoiHelper(groupMatches[0][8])
-	offset.weeks = atoiHelper(groupMatches[0][11])
-	offset.days = atoiHelper(groupMatches[0][15])
-	offset.hours = atoiHelper(groupMatches[0][18])
-	offset.minutes = atoiHelper(groupMatches[0][22])
-	offset.seconds = atoiHelper(groupMatches[0][25])
+	offset.years = atoiHelper(groupMatches[0][3])
+	offset.months = atoiHelper(groupMatches[0][7])
+	offset.weeks = atoiHelper(groupMatches[0][10])
+	offset.days = atoiHelper(groupMatches[0][14])
+	offset.hours = atoiHelper(groupMatches[0][17])
+	offset.minutes = atoiHelper(groupMatches[0][21])
+	offset.seconds = atoiHelper(groupMatches[0][24])
 
 	return offset, nil
 }

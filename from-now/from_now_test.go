@@ -10,9 +10,20 @@ import (
 )
 
 var (
-	// TIMESTAMP_REGEXP is the regular expression that all timestamps should conform to
-	// we assume we won't need to validate beyond 2099, this is only used for test purposes
-	TIMESTAMP_REGEXP = regexp.MustCompile("^20[0-9]{2}-(1[0-2]|0[0-9])-(3[0-1]|[0-2][0-9])T(2[0-3]|[01][0-9])(:[0-5][0-9]){2}(Z|(\\+|-)(2[0-3]|[01][0-9]):[0-5][0-9])$")
+	// RegexpTimestamp is the regular expression that all timestamps should conform to
+	// we assume we won't need to validate beyond 2999, this is only used for test purposes
+	RegexpTimestamp = regexp.MustCompile(
+		// beginning of the line
+		`^` +
+			// year-month-day
+			`20[0-9]{2}-(1[0-2]|0[0-9])-(3[0-1]|[0-2][0-9])` +
+			// T then hours:minutes:seconds (0 padded)
+			`T(2[0-3]|[01][0-9])(:[0-5][0-9]){2}` +
+			// Z or timezone offset
+			`(Z|(\+|-)(2[0-3]|[01][0-9]):[0-5][0-9])` +
+			// end of the line
+			`$`,
+	)
 )
 
 func TestParseTimeComplete(t *testing.T) {
@@ -65,8 +76,15 @@ func TestAtoiHelper(t *testing.T) {
 	}, "should panic")
 }
 
-// now, test the command as a whole
+// TestFromNowEmpty tests an empty call of the cobra command.
+func TestFromNowEmpty(t *testing.T) {
+	assert := assert.New(t)
 
+	err := fromNow(nil, []string{})
+	assert.Error(err, "the input is empty and should produce an error")
+}
+
+// TestFromNowInvalid tests an invalid call of the cobra command.
 func TestFromNowInvalid(t *testing.T) {
 	assert := assert.New(t)
 
@@ -79,6 +97,7 @@ func TestFromNowInvalid(t *testing.T) {
 	assert.Error(err, "the input is invalid and should produce an error")
 }
 
+// TestFromNowValid tests a valid call of the cobra command.
 func TestFromNowValid(t *testing.T) {
 	assert := assert.New(t)
 
@@ -90,7 +109,7 @@ func TestFromNowValid(t *testing.T) {
 
 	output := buf.String()
 	output = output[0 : len(output)-1]
-	match := TIMESTAMP_REGEXP.MatchString(output)
+	match := RegexpTimestamp.MatchString(output)
 
 	assert.NoError(err, "error when given a valid input")
 	assert.True(match, "the command did not return a valid timestamp")
