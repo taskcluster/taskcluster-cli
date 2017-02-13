@@ -10,8 +10,6 @@ import (
 	"github.com/taskcluster/taskcluster-client-go/queue"
 )
 
-type arguments map[string]interface{}
-
 // Executor represents the function interface of the task subcommand.
 type Executor func(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error
 
