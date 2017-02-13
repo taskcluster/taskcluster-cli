@@ -25,7 +25,7 @@ func fromNow(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return errors.New("from-now requires argument <duration>")
 	}
-	duration := args[0]
+	duration := strings.Join(args, " ")
 
 	offset, err := parseTime(duration)
 
