@@ -3,42 +3,34 @@ package fromNow
 import (
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/taskcluster/taskcluster-cli/extpoints"
+	"github.com/taskcluster/taskcluster-cli/root"
+
+	"github.com/spf13/cobra"
 )
 
-type fromNow struct{}
-
 func init() {
-	extpoints.Register("from-now", fromNow{})
+	root.Command.AddCommand(&cobra.Command{
+		Use:   "from-now <duration>",
+		Short: "Returns a timestamp which is <duration> ahead in the future.",
+		RunE:  fromNow,
+	})
 }
 
-func (fromNow) ConfigOptions() map[string]extpoints.ConfigOption {
-	return nil
-}
-
-func (fromNow) Summary() string {
-	return "Returns a timestamp which is <duration> ahead in the future."
-}
-
-func (fromNow) Usage() string {
-	usage := "Usage: taskcluster from-now <duration>\n"
-	return usage
-}
-
-func (fromNow) Execute(context extpoints.Context) bool {
-	duration := context.Arguments["<duration>"].(string)
+func fromNow(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
+		return errors.New("from-now requires argument <duration>")
+	}
+	duration := args[0]
 
 	offset, err := parseTime(duration)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: string '%s' is not a valid time expression\n", duration)
-		return false
+		return fmt.Errorf("error: string '%s' is not a valid time expression\n", duration)
 	}
 
 	timeToAdd := time.Hour*time.Duration(offset.weeks*7*24) +
@@ -50,9 +42,9 @@ func (fromNow) Execute(context extpoints.Context) bool {
 	timein := time.Now().Add(timeToAdd)
 	timein = timein.AddDate(offset.years, offset.months, 0)
 
-	fmt.Println(timein.Format(time.RFC3339))
+	fmt.Fprintln(cmd.OutOrStdout(), timein.Format(time.RFC3339))
 
-	return true
+	return nil
 }
 
 type timeOffset struct {
