@@ -1,9 +1,18 @@
 package fromNow
 
 import (
+	"bytes"
+	"regexp"
 	"testing"
 
+	"github.com/spf13/cobra"
 	assert "github.com/stretchr/testify/require"
+)
+
+var (
+	// TIMESTAMP_REGEXP is the regular expression that all timestamps should conform to
+	// we assume we won't need to validate beyond 2099, this is only used for test purposes
+	TIMESTAMP_REGEXP = regexp.MustCompile("^20[0-9]{2}-(1[0-2]|0[0-9])-(3[0-1]|[0-2][0-9])T(2[0-3]|[01][0-9])(:[0-5][0-9]){2}(Z|(\\+|-)(2[0-3]|[01][0-9]):[0-5][0-9])$")
 )
 
 func TestParseTimeComplete(t *testing.T) {
@@ -54,4 +63,35 @@ func TestAtoiHelper(t *testing.T) {
 	assert.Panics(func() {
 		atoiHelper("!")
 	}, "should panic")
+}
+
+// now, test the command as a whole
+
+func TestFromNowInvalid(t *testing.T) {
+	assert := assert.New(t)
+
+	buf := &bytes.Buffer{}
+	cmd := &cobra.Command{}
+	cmd.SetOutput(buf)
+
+	err := fromNow(cmd, []string{"this should produce an error"})
+
+	assert.Error(err, "the input is invalid and should produce an error")
+}
+
+func TestFromNowValid(t *testing.T) {
+	assert := assert.New(t)
+
+	buf := &bytes.Buffer{}
+	cmd := &cobra.Command{}
+	cmd.SetOutput(buf)
+
+	err := fromNow(cmd, []string{"2 years 5 days 6 minutes"})
+
+	output := buf.String()
+	output = output[0 : len(output)-1]
+	match := TIMESTAMP_REGEXP.MatchString(output)
+
+	assert.NoError(err, "error when given a valid input")
+	assert.True(match, "the command did not return a valid timestamp")
 }
