@@ -1,6 +1,7 @@
 package taskLog
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -43,7 +44,7 @@ func (taskLog) Execute(context extpoints.Context) bool {
 	}
 
 	route = strings.Replace(route, "<taskId>", taskID, 1)
-	route = strings.Replace(route, "<name>", "public/logs/live_backing.log", 1)
+	route = strings.Replace(route, "<name>", "public/logs/live.log", 1)
 
 	body, _ := makeGetRequest(route)
 
@@ -53,25 +54,29 @@ func (taskLog) Execute(context extpoints.Context) bool {
 
 	if len(raw) != 0 {
 		// Error, most likely with the taskID
-		if _, ok := raw["message"]; ok {
-			panic(raw["message"])
-		}
 		return false
 	}
 
-	fmt.Println(string(body))
 	return true
 
 }
 
 func makeGetRequest(path string) (b []byte, err error) {
+	fmt.Println(path)
 	resp, err := http.Get(path)
 	if err != nil {
 		panic("Error making request to " + path)
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 
+	// Read line by line for live logs.
+	// This will also print the error message for failed requests.
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
 	return body, err
 }
