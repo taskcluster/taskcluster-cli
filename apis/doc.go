@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	for name, service := range Services {
+	for name, service := range services {
 		name = strings.ToLower(name[:1]) + name[1:]
 		extpoints.Register(name, apiProvider{
 			Name:    name,

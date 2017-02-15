@@ -3,7 +3,7 @@ package apis
 
 import "github.com/taskcluster/taskcluster-cli/apis/definitions"
 
-var Services = map[string]definitions.Service{
+var services = map[string]definitions.Service{
 	"Auth": definitions.Service{
 		BaseURL:     "https://auth.taskcluster.net/v1",
 		Title:       "Authentication API",
