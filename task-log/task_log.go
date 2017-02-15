@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
-	"github.com/taskcluster/taskcluster-cli/apis"
 	"github.com/taskcluster/taskcluster-cli/extpoints"
 )
 
@@ -35,16 +33,7 @@ func (taskLog) Execute(context extpoints.Context) bool {
 	taskID := context.Arguments["<taskID>"].(string)
 
 	// Get route from services.go
-	route := apis.Services["Queue"].BaseURL
-	for _, entry := range apis.Services["Queue"].Entries {
-		if entry.Name == "getLatestArtifact" {
-			route += entry.Route
-			break
-		}
-	}
-
-	route = strings.Replace(route, "<taskId>", taskID, 1)
-	route = strings.Replace(route, "<name>", "public/logs/live.log", 1)
+	route := "https://queue.taskcluster.net/v1/task/" + taskID + "/artifacts/public/logs/live.log"
 
 	body, _ := makeGetRequest(route)
 
