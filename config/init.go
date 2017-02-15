@@ -28,7 +28,7 @@ func Setup() {
 	// load configuration
 	Configuration, err = Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration file, error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to load configuration file, error: %s\n", err)
 		os.Exit(1)
 	}
 

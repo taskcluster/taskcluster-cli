@@ -10,3 +10,5 @@ import _ "github.com/taskcluster/taskcluster-cli/group"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/task"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/version"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/slugid"
+import _ "github.com/taskcluster/taskcluster-cli/config-cmd" // commands for config
+import _ "github.com/taskcluster/taskcluster-cli/task-log"

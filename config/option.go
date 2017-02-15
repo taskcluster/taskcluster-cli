@@ -14,8 +14,8 @@ type OptionDefinition struct {
 	Validate    func(value interface{}) error
 }
 
-// RegisterConfigOption takes in the name of the command and an OptionDefinition object
-func RegisterConfigOption(command string, options map[string]OptionDefinition) {
+// RegisterOptions takes in the name of the command and an map of OptionDefinition objects
+func RegisterOptions(command string, options map[string]OptionDefinition) {
 	if _, ok := OptionsDefinitions[command]; !ok {
 		OptionsDefinitions[command] = make(map[string]OptionDefinition)
 	}

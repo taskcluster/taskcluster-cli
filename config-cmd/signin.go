@@ -1,4 +1,4 @@
-package config
+package configCmd
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bryanl/webbrowser"
+	"github.com/taskcluster/taskcluster-cli/config"
 	"github.com/taskcluster/taskcluster-cli/extpoints"
 	graceful "gopkg.in/tylerb/graceful.v1"
 )
@@ -54,12 +55,6 @@ func (signin) Usage() string {
 
 func (signin) Execute(context extpoints.Context) bool {
 	// Load configuration
-	config, err := Load()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration file, error: %s\n", err)
-		return false
-	}
-
 	fmt.Println("Starting")
 
 	// Find port, choose 0 meaning random port, if none
@@ -79,11 +74,11 @@ func (signin) Execute(context extpoints.Context) bool {
 	var serr error
 	s.Server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		qs := r.URL.Query()
-		config["config"]["clientId"] = qs.Get("clientId")
-		config["config"]["accessToken"] = qs.Get("accessToken")
-		config["config"]["certificate"] = qs.Get("certificate")
+		config.Configuration["config"]["clientId"] = qs.Get("clientId")
+		config.Configuration["config"]["accessToken"] = qs.Get("accessToken")
+		config.Configuration["config"]["certificate"] = qs.Get("certificate")
 
-		serr = Save(config)
+		serr = config.Save(config.Configuration)
 		if serr != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save configuration, error: %s\n", serr)
 		} else {
