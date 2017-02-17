@@ -31,8 +31,8 @@ tasks:
           && gometalinter --install --force
           && go install ./...
           && gometalinter --vendor --disable-all --enable=gotype --enable=golint 
-          --enable=deadcode --enable=staticcheck 
-          --enable=vet --enable=vetshadow --enable=gosimple ./...
+          --enable=deadcode --enable=staticcheck --enable=misspell
+          --enable=vet --enable=vetshadow --enable=gosimple --skip=apis ./...
     metadata:
       name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
