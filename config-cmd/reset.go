@@ -9,9 +9,9 @@ import (
 
 func init() {
 	cmd := &cobra.Command{
-		Use: "reset [<key> | --all]",
+		Use:   "reset [<key> | --all]",
 		Short: "Reset one or all configuration options",
-		RunE: cmdReset,
+		RunE:  cmdReset,
 	}
 	cmd.Flags().BoolP("all", "a", false, "Reset all options.")
 

@@ -11,9 +11,9 @@ import (
 
 func init() {
 	Command.AddCommand(&cobra.Command{
-		Use: "help [<option>]",
+		Use:   "help [<option>]",
 		Short: "Get help for TaskCluster's configuration options.",
-		RunE: cmdHelp,
+		RunE:  cmdHelp,
 	})
 }
 
@@ -73,7 +73,7 @@ func printHelp(cmd *cobra.Command) {
 
 		// this is for the maximum name length for a key
 		for option, _ := range options {
-			if len(command) + len(option) > maxLength {
+			if len(command)+len(option) > maxLength {
 				maxLength = len(command) + len(option)
 			}
 		}
