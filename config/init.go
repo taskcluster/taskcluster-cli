@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	// Configuration contains the current configuration values.s
+	// Configuration contains the current configuration values.
 	Configuration map[string]map[string]interface{}
 
 	// OptionsDefinitions is a map of all the OptionDefinitions, by command.
