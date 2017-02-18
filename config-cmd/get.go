@@ -9,9 +9,9 @@ import (
 
 func init() {
 	cmd := &cobra.Command{
-		Use: "get <key>",
+		Use:   "get <key>",
 		Short: "Get the current value of a configuration option",
-		RunE: cmdGet,
+		RunE:  cmdGet,
 	}
 	cmd.Flags().StringP("output", "o", "", "Write output to file [default: -]")
 	cmd.Flags().StringP("format", "f", "yaml", "Select output format [default: yaml]")

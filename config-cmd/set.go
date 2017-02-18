@@ -12,9 +12,9 @@ import (
 
 func init() {
 	cmd := &cobra.Command{
-		Use: "set <key> [<value>]",
+		Use:   "set <key> [<value>]",
 		Short: "Set configuration <key> to <value>",
-		RunE: cmdSet,
+		RunE:  cmdSet,
 	}
 	cmd.Flags().BoolP("dry-run", "d", false, "Validate option only, don't set it")
 

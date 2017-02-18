@@ -108,19 +108,3 @@ func cmdConfig(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
-/* NEW STRUCTURE
-	taskcluster config	[nothing] <-- display full config
-						get <key>
-						set <key> <value> [-d, --dry-run] <-- boolean
-						reset <key>
-						help <key>
-
-	Persistent flags:
-		-o, --output FILE <-- string
-		-f, --format (json | yaml) <-- string
-
-	- make function to parse key
-	- reuse code when possible
-	- split functions
-*/
