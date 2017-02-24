@@ -3,10 +3,10 @@ package task
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/taskcluster/taskcluster-cli/config"
 	"github.com/taskcluster/taskcluster-cli/root"
 
+	"github.com/spf13/cobra"
 	tcclient "github.com/taskcluster/taskcluster-client-go"
 )
 
@@ -52,6 +52,12 @@ func init() {
 		},
 		// artifacts
 		artifactsCmd,
+		// log
+		&cobra.Command{
+			Use:   "log <taskId>",
+			Short: "Streams the log until completion.",
+			RunE:  executeHelperE(runLog),
+		},
 	)
 
 	// Commands that take actions
