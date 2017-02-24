@@ -30,7 +30,7 @@ func fromNow(cmd *cobra.Command, args []string) error {
 	offset, err := parseTime(duration)
 
 	if err != nil {
-		return fmt.Errorf("error: string '%s' is not a valid time expression\n", duration)
+		return fmt.Errorf("string '%s' is not a valid time expression", duration)
 	}
 
 	timeToAdd := time.Hour*time.Duration(offset.weeks*7*24) +

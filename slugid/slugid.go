@@ -89,7 +89,7 @@ func decode(cmd *cobra.Command, args []string) error {
 	// nice slugs are just a subset of all slugs, which must match V4 pattern
 	// this slug may be nice or not; we don't know, so use general pattern
 	match := RegexpSlugV4.MatchString(slug)
-	if match == false {
+	if !match {
 		return fmt.Errorf("invalid slug format '%s'", slug)
 	}
 
@@ -108,7 +108,7 @@ func encode(cmd *cobra.Command, args []string) error {
 	// nice slugs are just a subset of all slugs, which must match V4 pattern
 	// this slug may be nice or not; we don't know, so use general pattern
 	match := RegexpUUIDV4.MatchString(uuid)
-	if match == false {
+	if !match {
 		return fmt.Errorf("invalid uuid format '%s'", uuid)
 	}
 
