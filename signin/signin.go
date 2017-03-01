@@ -1,6 +1,7 @@
-package configCmd
+package signin
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -36,7 +37,12 @@ and save the temporary credentials to local configuration file.`,
 		"loginUrl": config.OptionDefinition{
 			Description: "URL for the login service.",
 			Default:     "https://login.taskcluster.net",
-			Validate:    isString,
+			Validate:    func(value interface{}) error {
+				if _, ok := value.(string); !ok {
+					return errors.New("Must be a string")
+				}
+				return nil
+			},
 		},
 	})
 }
@@ -121,7 +127,7 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 
 	if serr != nil {
 		return fmt.Errorf("failed to save configuration, error: %s\n", serr)
-	} else {
-		return nil
 	}
+
+	return nil
 }
