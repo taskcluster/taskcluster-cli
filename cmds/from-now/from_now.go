@@ -33,6 +33,7 @@ func fromNow(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("string '%s' is not a valid time expression", duration)
 	}
 
+	// logic taken from github.com/taskcluster/taskcluster-client/blob/master/lib/utils.js
 	timeToAdd := time.Hour*time.Duration(offset.weeks*7*24) +
 		time.Hour*time.Duration(offset.days*24) +
 		time.Hour*time.Duration(offset.hours) +
@@ -70,24 +71,24 @@ func parseTime(str string) (timeOffset, error) {
 
 	// Regexp taken from github.com/taskcluster/taskcluster-client/blob/master/lib/parsetime.js
 	re := regexp.MustCompile(
-		// beginning and sign (group 1)
-		`^(-|\+)?` +
-			// years offset (group 3)
+		// beginning and sign (group 2)
+		`^(\s*(-|\+))?` +
+			// years offset (group 4)
 			`(\s*(\d+)\s*y((ears?)|r)?)?` +
-			// months offset (group 7)
+			// months offset (group 8)
 			`(\s*(\d+)\s*mo(nths?)?)?` +
-			// weeks offset (group 10)
+			// weeks offset (group 11)
 			`(\s*(\d+)\s*w((eeks?)|k)?)?` +
-			// days offset (group 14)
+			// days offset (group 15)
 			`(\s*(\d+)\s*d(ays?)?)?` +
-			// hours offset (group 17)
+			// hours offset (group 18)
 			`(\s*(\d+)\s*h((ours?)|r)?)?` +
-			// minutes offset (group 21)
+			// minutes offset (group 22)
 			`(\s*(\d+)\s*min(utes?)?)?` +
-			// seconds offset (group 24)
+			// seconds offset (group 25)
 			`(\s*(\d+)\s*s(ec(onds?)?)?)?` +
 			// the end
-			`$`,
+			`\s*$`,
 	)
 
 	if !re.MatchString(str) {
@@ -102,13 +103,13 @@ func parseTime(str string) (timeOffset, error) {
 	// 	neg = -1
 	// }
 
-	offset.years = atoiHelper(groupMatches[0][3])
-	offset.months = atoiHelper(groupMatches[0][7])
-	offset.weeks = atoiHelper(groupMatches[0][10])
-	offset.days = atoiHelper(groupMatches[0][14])
-	offset.hours = atoiHelper(groupMatches[0][17])
-	offset.minutes = atoiHelper(groupMatches[0][21])
-	offset.seconds = atoiHelper(groupMatches[0][24])
+	offset.years = atoiHelper(groupMatches[0][4])
+	offset.months = atoiHelper(groupMatches[0][8])
+	offset.weeks = atoiHelper(groupMatches[0][11])
+	offset.days = atoiHelper(groupMatches[0][15])
+	offset.hours = atoiHelper(groupMatches[0][18])
+	offset.minutes = atoiHelper(groupMatches[0][22])
+	offset.seconds = atoiHelper(groupMatches[0][25])
 
 	return offset, nil
 }

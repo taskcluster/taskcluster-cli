@@ -1,13 +1,9 @@
 package task
 
 import (
-	"fmt"
-
-	"github.com/taskcluster/taskcluster-cli/config"
 	"github.com/taskcluster/taskcluster-cli/root"
 
 	"github.com/spf13/cobra"
-	tcclient "github.com/taskcluster/taskcluster-client-go"
 )
 
 var (
@@ -84,18 +80,4 @@ func init() {
 
 	// Add the task subtree to the root.
 	root.Command.AddCommand(Command)
-}
-
-func executeHelperE(f Executor) func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		var creds *tcclient.Credentials
-		if config.Credentials != nil {
-			creds = config.Credentials.ToClientCredentials()
-		}
-
-		if len(args) < 1 {
-			return fmt.Errorf("%s expects argument <taskId>", cmd.Name())
-		}
-		return f(creds, args, cmd.OutOrStdout(), cmd.Flags())
-	}
 }
