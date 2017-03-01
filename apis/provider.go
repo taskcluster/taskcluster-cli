@@ -65,7 +65,7 @@ func init() {
 		fs.StringP("base-url", "b", service.BaseURL, "BaseURL for "+cmdString)
 
 		Command.AddCommand(cmd)
-		config.RegisterConfigOption("api-"+name, map[string]config.OptionDefinition{
+		config.RegisterOptions("api-"+name, map[string]config.OptionDefinition{
 			"baseUrl": config.OptionDefinition{
 				Default: service.BaseURL,
 				Env:     "TASKCLUSTER_QUEUE_BASE_URL",

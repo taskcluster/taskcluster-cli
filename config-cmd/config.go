@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	// Command holds the `taskcluster config` command definition
+	// we attach `taskcluster config [...]` subcommands on it
 	Command = &cobra.Command{
 		Use: "config",
 		Short: "Get/set taskcluster CLI configuration options.",

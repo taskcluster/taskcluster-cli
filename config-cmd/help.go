@@ -26,11 +26,8 @@ func cmdHelp(cmd *cobra.Command, args []string) error {
 
 	// otherwise, print for one specific option
 	err := printOptionHelp(cmd, args[0])
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // printOptionHelp shows help for specific option
@@ -72,7 +69,7 @@ func printHelp(cmd *cobra.Command) {
 		commands = append(commands, command)
 
 		// this is for the maximum name length for a key
-		for option, _ := range options {
+		for option := range options {
 			if len(command)+len(option) > maxLength {
 				maxLength = len(command) + len(option)
 			}

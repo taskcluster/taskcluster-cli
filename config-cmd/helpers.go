@@ -28,7 +28,7 @@ func parseKey(key string) (string, string, error) {
 	parts := strings.SplitN(key, ".", 2)
 
 	if len(parts) != 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
-		return "", "", fmt.Errorf("invalid key format '%s', configuration keys must be on the form '<command>.<option>'")
+		return "", "", fmt.Errorf("invalid key format '%s', configuration keys must be on the form '<command>.<option>'", key)
 	}
 
 	return parts[0], parts[1], nil
