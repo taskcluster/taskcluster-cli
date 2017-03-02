@@ -106,7 +106,7 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 		Port: port,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to listen on localhost, error: %s\n", err)
+		return fmt.Errorf("failed to listen on localhost, error: %s", err)
 	}
 
 	// Construct URL for login service and open it
@@ -126,7 +126,7 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 	s.Serve(listener)
 
 	if serr != nil {
-		return fmt.Errorf("failed to save configuration, error: %s\n", serr)
+		return fmt.Errorf("failed to save configuration, error: %s", serr)
 	}
 
 	return nil
