@@ -13,7 +13,7 @@ _practical_ tasks like listing and cancelling scheduled runs.
 
 For a list of all commands run `taskcluster help`, detailed information about
 each command is available with
-`taskcluster help <command> [<sub-command> [...]]`. You call also use the `-h`
+`taskcluster help <command> [<sub-command> [...]]`. You can also use the `-h`
 or `--help` parameter to get a command's help information.
 
 ### Installation

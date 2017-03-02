@@ -28,7 +28,7 @@ var (
 	// Command is the root of the api commands.
 	Command = &cobra.Command{
 		Use:   "api",
-		Short: "Groups all api commands together.",
+		Short: "Direct access to TaskCluster APIs.",
 	}
 )
 

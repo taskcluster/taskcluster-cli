@@ -43,7 +43,7 @@ func init() {
 		// group
 		&cobra.Command{
 			Use:   "group <taskId>",
-			Short: "Get the groupID of a task.",
+			Short: "Get the taskGroupID of a task.",
 			RunE:  executeHelperE(runGroup),
 		},
 		// artifacts
@@ -61,19 +61,19 @@ func init() {
 		// cancel
 		&cobra.Command{
 			Use:   "cancel <taskId>",
-			Short: "Get the groupID of a task.",
+			Short: "Cancel a task.",
 			RunE:  executeHelperE(runCancel),
 		},
 		// cancel
 		&cobra.Command{
 			Use:   "rerun <taskId>",
-			Short: "Reruns a task.",
+			Short: "Rerun a task.",
 			RunE:  executeHelperE(runRerun),
 		},
 		// cancel
 		&cobra.Command{
 			Use:   "complete <taskId>",
-			Short: "Completes the execution of a task.",
+			Short: "Complete the execution of a task.",
 			RunE:  executeHelperE(runComplete),
 		},
 	)
