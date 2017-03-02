@@ -6,7 +6,7 @@ package main
 import _ "github.com/taskcluster/taskcluster-cli/apis"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/config"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/from-now"
-import _ "github.com/taskcluster/taskcluster-cli/group"
+import _ "github.com/taskcluster/taskcluster-cli/cmds/group"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/signin"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/slugid"
 import _ "github.com/taskcluster/taskcluster-cli/cmds/task"

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	// Command is the root of the
+	// Command is the root of the task subtree.
 	Command = &cobra.Command{
 		Use:   "task",
 		Short: "Provides task-related actions and commands.",
