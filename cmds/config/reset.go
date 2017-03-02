@@ -27,7 +27,6 @@ func cmdReset(cmd *cobra.Command, args []string) error {
 				fmt.Fprintf(cmd.OutOrStdout(), "Reset %s.%s to default value.\n", command, option)
 			}
 		}
-
 	} else { // or reset one specific option
 		if len(args) == 0 {
 			return fmt.Errorf("reset requires argument <key> or flag --all to be set")
