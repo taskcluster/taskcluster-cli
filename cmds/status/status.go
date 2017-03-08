@@ -1,36 +1,55 @@
 package task
 
 import (
+	"fmt"
+
 	"github.com/taskcluster/taskcluster-cli/root"
 
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Command is the root of the task subtree.
-	Command = &cobra.Command{
-		Use:   "status",
-		Short: "Shows the live status of taskcluster services.",
-	}
-)
-
 func init() {
 	statusCmd := &cobra.Command{
-		Use:   "status <taskId>",
-		Short: "Get the status of a service.",
-		RunE:  status,
+		Short: "taskcluster-cli status will query the current running status of taskcluster services",
+		Long: `When called without arguments, taskcluster-clistatus will return the current running
+status of all production taskcluster services.
+
+By specifying one or more optional services as arguments, you can limit the
+services included in the status report.`,
+		PreRunE: validateArgs,
+		Use:     "status [queue] [auth]  [awsprovisioner] [events] [index] [scheduler] [secrets]",
+		ValidArgs: []string{
+			"queue",
+			"auth",
+			"awsprovisioner",
+			"events",
+			"index",
+			"scheduler",
+			"secrets",
+		},
+		RunE: status,
 	}
 
-	// Commands that fetch information
-	Command.AddCommand(
-		// status
-		statusCmd,
-	)
-
 	// Add the task subtree to the root.
-	root.Command.AddCommand(Command)
+	root.Command.AddCommand(statusCmd)
 }
 
-func status(*cobra.Command, []string) error {
+func validateArgs(cmd *cobra.Command, args []string) error {
+outer:
+	for _, arg := range args {
+		for _, validArg := range cmd.ValidArgs {
+			if arg == validArg {
+				continue outer
+			}
+		}
+		return fmt.Errorf("invalid argument(s) passed")
+	}
+	return nil
+}
+
+func status(cmd *cobra.Command, args []string) error {
+	for _, service := range args {
+		fmt.Printf("%v status: %v\n", service, "running")
+	}
 	return nil
 }
