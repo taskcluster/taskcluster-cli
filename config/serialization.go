@@ -1,19 +1,22 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // configFile is the location of the configuration file
-func configFile() string {
+func configFile() io.Reader {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
 	if configFolder == "" {
 		homeFolder := os.Getenv("HOME")
@@ -24,7 +27,8 @@ func configFile() string {
 			configFolder = filepath.Join(homeFolder, ".config")
 		}
 	}
-	return filepath.Join(configFolder, "taskcluster.yml")
+	returnConfigLoc := filepath.Join(configFolder, "taskcluster.yml")
+	return strings.NewReader(returnConfigLoc)
 }
 
 // Load will load confiration file, and initialize a default configuration
@@ -32,13 +36,13 @@ func configFile() string {
 // file is present, but we are unable to parse it.
 // TODO	we could simplify this function and only go through the definitions once
 //		and what happens if a value is tied to an env var AND to the config file?
-func Load() (map[string]map[string]interface{}, error) {
+func Load(configFileLocation io.Reader) (map[string]map[string]interface{}, error) {
 	config := make(map[string]map[string]interface{})
 
 	// Read config file and unmarshal into config overwriting default values
 	// if ioutil.ReadFile returns an error, it means the config file couldn't
 	// be found and we just skip
-	configFile := configFile()
+	configFile := readerToString(configFileLocation)
 	if data, err := ioutil.ReadFile(configFile); err == nil {
 		if err = yaml.Unmarshal(data, &config); err != nil {
 			return nil, fmt.Errorf(
@@ -169,10 +173,16 @@ func Save(config map[string]map[string]interface{}) error {
 	}
 
 	// Write config file
-	configFile := configFile()
+	configFile := readerToString(configFile())
 	if err = ioutil.WriteFile(configFile, data, 0664); err != nil {
 		return fmt.Errorf("Failed to write config file: %s, error: %s", configFile, err)
 	}
 
 	return nil
+}
+
+func readerToString(reader io.Reader) string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(reader)
+	return buf.String()
 }
