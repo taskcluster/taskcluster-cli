@@ -53,8 +53,32 @@ outer:
 }
 
 func status(cmd *cobra.Command, args []string) error {
+	endpoints := pingEndpoints()
+
 	for _, service := range args {
 		fmt.Printf("%v status: %v\n", service, "running")
 	}
 	return nil
 }
+
+const jsonStream = `{
+  "Auth": "http://references.taskcluster.net/auth/v1/api.json",
+  "AuthEvents": "http://references.taskcluster.net/auth/v1/exchanges.json",
+  "AwsProvisioner": "http://references.taskcluster.net/aws-provisioner/v1/api.json",
+  "AwsProvisionerEvents": "http://references.taskcluster.net/aws-provisioner/v1/exchanges.json",
+  "Github": "http://references.taskcluster.net/github/v1/api.json",
+  "GithubEvents": "http://references.taskcluster.net/github/v1/exchanges.json",
+  "Hooks": "http://references.taskcluster.net/hooks/v1/api.json",
+  "Index": "http://references.taskcluster.net/index/v1/api.json",
+  "Login": "http://references.taskcluster.net/login/v1/api.json",
+  "Notify": "http://references.taskcluster.net/notify/v1/api.json",
+  "Pulse": "http://references.taskcluster.net/pulse/v1/api.json",
+  "PurgeCache": "http://references.taskcluster.net/purge-cache/v1/api.json",
+  "PurgeCacheEvents": "http://references.taskcluster.net/purge-cache/v1/exchanges.json",
+  "Queue": "http://references.taskcluster.net/queue/v1/api.json",
+  "QueueEvents": "http://references.taskcluster.net/queue/v1/exchanges.json",
+  "Scheduler": "http://references.taskcluster.net/scheduler/v1/api.json",
+  "SchedulerEvents": "http://references.taskcluster.net/scheduler/v1/exchanges.json",
+  "Secrets": "http://references.taskcluster.net/secrets/v1/api.json",
+  "TreeherderEvents": "http://references.taskcluster.net/taskcluster-treeherder/v1/exchanges.json"
+}`
