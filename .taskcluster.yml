@@ -34,7 +34,7 @@ tasks:
           --enable=gotype --enable=golint 
           --enable=deadcode --enable=staticcheck --enable=misspell
           --enable=vet --enable=vetshadow --enable=gosimple
-          --skip=apis ./...
+          --skip=apis --skip=vendor ./...
     metadata:
       name: "TaskCluster .taskcluster.yml file"
       description: "All non-integration tests"
