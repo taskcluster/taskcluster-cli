@@ -1,22 +1,33 @@
 package task
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/taskcluster/taskcluster-cli/root"
+	"github.com/taskcluster/taskcluster-client-go/codegenerator/model"
 
 	"github.com/spf13/cobra"
 )
 
+var (
+	pingAPIs map[string]*model.API
+)
+
 func init() {
-	validArgs := []string{
-		"queue",
-		"auth",
-		"awsprovisioner",
-		"events",
-		"index",
-		"scheduler",
-		"secrets",
+	err := validateCache()
+	if err != nil {
+		log.Fatal(err)
+	}
+	validArgs := make([]string, len(pingAPIs))
+	i := 0
+	for k := range pingAPIs {
+		validArgs[i] = k
+		i++
 	}
 	use := "status"
 	for _, validArg := range validArgs {
@@ -24,19 +35,79 @@ func init() {
 	}
 	statusCmd := &cobra.Command{
 		Short: "taskcluster-cli status will query the current running status of taskcluster services",
-		Long: `When called without arguments, taskcluster-clistatus will return the current running
+		Long: `When called without arguments, taskcluster-cli status will return the current running
 status of all production taskcluster services.
 
 By specifying one or more optional services as arguments, you can limit the
 services included in the status report.`,
-		PreRunE:   validateArgs,
-		Use:       use,
-		ValidArgs: validArgs,
-		RunE:      status,
+		PreRunE:            preRun,
+		Use:                use,
+		ValidArgs:          validArgs,
+		RunE:               status,
+		DisableFlagParsing: true,
 	}
 
 	// Add the task subtree to the root.
 	root.Command.AddCommand(statusCmd)
+}
+
+func preRun(cmd *cobra.Command, args []string) error {
+	return validateArgs(cmd, args)
+}
+
+func validateCache() error {
+	return fetchManifest("https://references.taskcluster.net/manifest.json")
+}
+
+func fetchManifest(manifestURL string) error {
+	var allAPIs map[string]string
+	err := objectFromJsonURL(manifestURL, &allAPIs)
+	if err != nil {
+		return err
+	}
+	pingAPIs = map[string]*model.API{}
+	for _, apiURL := range allAPIs {
+		reference := new(model.API)
+		err := objectFromJsonURL(apiURL, reference)
+		if err != nil {
+			return err
+		}
+
+		// loop through entries to find a /ping endpoint
+		for _, entry := range reference.Entries {
+			if entry.Name == "ping" {
+				// determine hostname
+				u, err := url.Parse(reference.BaseURL)
+				if err != nil {
+					return err
+				}
+				hostname := u.Hostname()
+				log.Printf("URL: %v", reference.BaseURL)
+				service := strings.SplitN(hostname, ".", 2)[0]
+				pingAPIs[service] = reference
+				break
+			}
+		}
+	}
+	return nil
+}
+
+func objectFromJsonURL(urlReturningJSON string, object interface{}) (err error) {
+	log.Printf("Reading from %v", urlReturningJSON)
+	resp, err := http.Get(urlReturningJSON)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Bad (!= 200) status code %v from (*URL) Hostnamerl %v", resp.StatusCode, urlReturningJSON)
+	}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&object)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func validateArgs(cmd *cobra.Command, args []string) error {
@@ -53,32 +124,8 @@ outer:
 }
 
 func status(cmd *cobra.Command, args []string) error {
-	endpoints := pingEndpoints()
-
 	for _, service := range args {
 		fmt.Printf("%v status: %v\n", service, "running")
 	}
 	return nil
 }
-
-const jsonStream = `{
-  "Auth": "http://references.taskcluster.net/auth/v1/api.json",
-  "AuthEvents": "http://references.taskcluster.net/auth/v1/exchanges.json",
-  "AwsProvisioner": "http://references.taskcluster.net/aws-provisioner/v1/api.json",
-  "AwsProvisionerEvents": "http://references.taskcluster.net/aws-provisioner/v1/exchanges.json",
-  "Github": "http://references.taskcluster.net/github/v1/api.json",
-  "GithubEvents": "http://references.taskcluster.net/github/v1/exchanges.json",
-  "Hooks": "http://references.taskcluster.net/hooks/v1/api.json",
-  "Index": "http://references.taskcluster.net/index/v1/api.json",
-  "Login": "http://references.taskcluster.net/login/v1/api.json",
-  "Notify": "http://references.taskcluster.net/notify/v1/api.json",
-  "Pulse": "http://references.taskcluster.net/pulse/v1/api.json",
-  "PurgeCache": "http://references.taskcluster.net/purge-cache/v1/api.json",
-  "PurgeCacheEvents": "http://references.taskcluster.net/purge-cache/v1/exchanges.json",
-  "Queue": "http://references.taskcluster.net/queue/v1/api.json",
-  "QueueEvents": "http://references.taskcluster.net/queue/v1/exchanges.json",
-  "Scheduler": "http://references.taskcluster.net/scheduler/v1/api.json",
-  "SchedulerEvents": "http://references.taskcluster.net/scheduler/v1/exchanges.json",
-  "Secrets": "http://references.taskcluster.net/secrets/v1/api.json",
-  "TreeherderEvents": "http://references.taskcluster.net/taskcluster-treeherder/v1/exchanges.json"
-}`
