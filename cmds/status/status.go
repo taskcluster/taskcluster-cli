@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	pingAPIs map[string]*model.API
+	pingURLs map[string]string
 )
 
 func init() {
@@ -23,9 +23,9 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	validArgs := make([]string, len(pingAPIs))
+	validArgs := make([]string, len(pingURLs))
 	i := 0
-	for k := range pingAPIs {
+	for k := range pingURLs {
 		validArgs[i] = k
 		i++
 	}
@@ -65,7 +65,7 @@ func fetchManifest(manifestURL string) error {
 	if err != nil {
 		return err
 	}
-	pingAPIs = map[string]*model.API{}
+	pingURLs = map[string]string{}
 	for _, apiURL := range allAPIs {
 		reference := new(model.API)
 		err := objectFromJsonURL(apiURL, reference)
@@ -82,9 +82,12 @@ func fetchManifest(manifestURL string) error {
 					return err
 				}
 				hostname := u.Hostname()
-				log.Printf("URL: %v", reference.BaseURL)
+				//			log.Printf("URL: %v", reference.BaseURL)
 				service := strings.SplitN(hostname, ".", 2)[0]
-				pingAPIs[service] = reference
+				pingURLs[service] = reference.BaseURL + entry.Route
+				log.Printf("URL: %v", pingURLs[service])
+				//loop through entries to get the status
+
 				break
 			}
 		}
@@ -93,7 +96,7 @@ func fetchManifest(manifestURL string) error {
 }
 
 func objectFromJsonURL(urlReturningJSON string, object interface{}) (err error) {
-	log.Printf("Reading from %v", urlReturningJSON)
+	//log.Printf("Reading from %v", urlReturningJSON)
 	resp, err := http.Get(urlReturningJSON)
 	if err != nil {
 		return err
@@ -124,6 +127,9 @@ outer:
 }
 
 func status(cmd *cobra.Command, args []string) error {
+	//	if (len)args==0{
+	//.....
+	//	}
 	for _, service := range args {
 		fmt.Printf("%v status: %v\n", service, "running")
 	}
