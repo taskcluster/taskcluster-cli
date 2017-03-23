@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/taskcluster/taskcluster-cli/root"
 	"github.com/taskcluster/taskcluster-client-go/codegenerator/model"
 
@@ -20,12 +21,12 @@ import (
 
 const (
 	manifestURL = "https://references.taskcluster.net/manifest.json"
-	cacheFile   = "cache.json"
 )
 
 var (
 	pingURLs  PingURLs
 	validArgs []string
+	cacheFile = CacheFilePath()
 )
 
 type (
@@ -41,6 +42,19 @@ type (
 		Uptime float64 `json:"uptime"`
 	}
 )
+
+// CacheFilePath returns the file system path to the cache file storing the ping URLs
+func CacheFilePath() string {
+	// 1. find out where home directory is (panic in case of error)
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	home := usr.HomeDir
+
+	// 2. return file path <home directory>/ .taskcluster-cli/ cmds/ status / cache.json
+	return filepath.Join(home, ".taskcluster-cli", "cmds", "status", "cache.json")
+}
 
 func init() {
 	var err error
@@ -108,7 +122,7 @@ func RefreshCache(manifestURL, path string) (pingURLs PingURLs, err error) {
 // ReadCachedURLsFile returns a *CachedURLs based on the contents of the file
 // with the given path.
 func ReadCachedURLsFile(path string) (cachedURLs *CachedURLs, err error) {
-	log.Println("Reading cache file")
+	color.Blue("Reading cache file %v", path)
 	var cachedURLsBytes []byte
 	cachedURLsBytes, err = ioutil.ReadFile(path)
 	if err != nil {
@@ -122,7 +136,7 @@ func ReadCachedURLsFile(path string) (cachedURLs *CachedURLs, err error) {
 // already, and creating parent folders, if required), using the current time
 // for the retrieval timestamp.
 func (p PingURLs) Cache(path string) (cachedURLs *CachedURLs, err error) {
-	log.Println("Writing cache file")
+	color.Magenta("Writing cache file %v", path)
 	parentDir := filepath.Dir(path)
 	err = os.MkdirAll(parentDir, 0755)
 	if err != nil {
@@ -152,7 +166,7 @@ func preRun(cmd *cobra.Command, args []string) error {
 //  ScrapePingURLs queries manifestURL to return a manifest of services, which
 //  are then queried to fetch ping URLs for taskcluster services
 func ScrapePingURLs(manifestURL string) (pingURLs PingURLs, err error) {
-	log.Println("Scraping ping URLs")
+	color.Yellow("Scraping ping URLs from %v", manifestURL)
 	var allAPIs map[string]string
 	err = objectFromJsonURL(manifestURL, &allAPIs)
 	if err != nil {
@@ -223,7 +237,8 @@ func respbody(service string) error {
 	}
 	if servstat.Alive == true {
 		living := "Alive"
-		fmt.Printf("%v : %v\n", service, living)
+		fmt.Printf("      %v\n", service)
+		color.Green("      %v\n", living)
 	}
 
 	return nil
