@@ -14,7 +14,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/taskcluster/taskcluster-cli/root"
-	"github.com/taskcluster/taskcluster-client-go/codegenerator/model"
 
 	"github.com/spf13/cobra"
 )
@@ -40,6 +39,16 @@ type (
 	PingResponse struct {
 		Alive  bool    `json:"alive"`
 		Uptime float64 `json:"uptime"`
+	}
+
+	API struct {
+		BaseURL string     `json:"baseUrl"`
+		Entries []APIEntry `json:"entries"`
+	}
+
+	APIEntry struct {
+		Name  string `json:"name"`
+		Route string `json:"route"`
 	}
 )
 
@@ -174,7 +183,7 @@ func ScrapePingURLs(manifestURL string) (pingURLs PingURLs, err error) {
 	}
 	pingURLs = map[string]string{}
 	for _, apiURL := range allAPIs {
-		reference := new(model.API)
+		reference := new(API)
 		err = objectFromJsonURL(apiURL, reference)
 		if err != nil {
 			return
