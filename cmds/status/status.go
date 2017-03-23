@@ -1,12 +1,16 @@
-package task
+package status
 
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/taskcluster/taskcluster-cli/root"
 	"github.com/taskcluster/taskcluster-client-go/codegenerator/model"
@@ -14,16 +18,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	manifestURL = "https://references.taskcluster.net/manifest.json"
+	cacheFile   = "cache.json"
+)
+
 var (
-	pingURLs map[string]string
+	pingURLs  PingURLs
+	validArgs []string
+)
+
+type (
+	PingURLs map[string]string
+
+	CachedURLs struct {
+		LastUpdated time.Time `json:"lastUpdated"`
+		PingURLs    PingURLs  `json:"pingURLs"`
+	}
+
+	PingResponse struct {
+		Alive  bool    `json:"alive"`
+		Uptime float64 `json:"uptime"`
+	}
 )
 
 func init() {
-	err := validateCache()
+	var err error
+	pingURLs, err = NewPingURLs()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	validArgs := make([]string, len(pingURLs))
+	validArgs = make([]string, len(pingURLs))
 	i := 0
 	for k := range pingURLs {
 		validArgs[i] = k
@@ -51,52 +76,116 @@ services included in the status report.`,
 	root.Command.AddCommand(statusCmd)
 }
 
+// NewPingURLs returns the ping URLs to use. The caller does not need to be
+// concerned about whether these URLs are retrieved from a local cache, or from
+// querying web services.
+func NewPingURLs() (pingURLs PingURLs, err error) {
+	if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
+		return RefreshCache(manifestURL, cacheFile)
+	}
+	cachedURLs, err := ReadCachedURLsFile(cacheFile)
+	if err != nil {
+		return
+	}
+	if cachedURLs.Expired(time.Hour * 24) {
+		return RefreshCache(manifestURL, cacheFile)
+	}
+	pingURLs = cachedURLs.PingURLs
+	return
+}
+
+// RefreshCache will scrape the manifest url for a dictionary of taskcluster
+// services, and cache the results in file at path.
+func RefreshCache(manifestURL, path string) (pingURLs PingURLs, err error) {
+	pingURLs, err = ScrapePingURLs(manifestURL)
+	if err != nil {
+		return
+	}
+	cachedURLs, err := pingURLs.Cache(path)
+	return cachedURLs.PingURLs, err
+}
+
+// ReadCachedURLsFile returns a *CachedURLs based on the contents of the file
+// with the given path.
+func ReadCachedURLsFile(path string) (cachedURLs *CachedURLs, err error) {
+	log.Println("Reading cache file")
+	var cachedURLsBytes []byte
+	cachedURLsBytes, err = ioutil.ReadFile(path)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(cachedURLsBytes, &cachedURLs)
+	return
+}
+
+// Cache writes the pingURLs p to a file at path (replacing if it exists
+// already, and creating parent folders, if required), using the current time
+// for the retrieval timestamp.
+func (p PingURLs) Cache(path string) (cachedURLs *CachedURLs, err error) {
+	log.Println("Writing cache file")
+	parentDir := filepath.Dir(path)
+	err = os.MkdirAll(parentDir, 0755)
+	if err != nil {
+		return
+	}
+	cachedURLs = &CachedURLs{
+		LastUpdated: time.Now(),
+		PingURLs:    p,
+	}
+	var bytes []byte
+	bytes, err = json.MarshalIndent(cachedURLs, "", "  ")
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(cacheFile, bytes, 0644)
+	return
+}
+
+func (cachedURLs *CachedURLs) Expired(d time.Duration) bool {
+	return time.Since(cachedURLs.LastUpdated) > d
+}
+
 func preRun(cmd *cobra.Command, args []string) error {
 	return validateArgs(cmd, args)
 }
 
-func validateCache() error {
-	return fetchManifest("https://references.taskcluster.net/manifest.json")
-}
-
-func fetchManifest(manifestURL string) error {
+//  ScrapePingURLs queries manifestURL to return a manifest of services, which
+//  are then queried to fetch ping URLs for taskcluster services
+func ScrapePingURLs(manifestURL string) (pingURLs PingURLs, err error) {
+	log.Println("Scraping ping URLs")
 	var allAPIs map[string]string
-	err := objectFromJsonURL(manifestURL, &allAPIs)
+	err = objectFromJsonURL(manifestURL, &allAPIs)
 	if err != nil {
-		return err
+		return
 	}
 	pingURLs = map[string]string{}
 	for _, apiURL := range allAPIs {
 		reference := new(model.API)
-		err := objectFromJsonURL(apiURL, reference)
+		err = objectFromJsonURL(apiURL, reference)
 		if err != nil {
-			return err
+			return
 		}
 
 		// loop through entries to find a /ping endpoint
 		for _, entry := range reference.Entries {
 			if entry.Name == "ping" {
 				// determine hostname
-				u, err := url.Parse(reference.BaseURL)
+				var u *url.URL
+				u, err = url.Parse(reference.BaseURL)
 				if err != nil {
-					return err
+					return
 				}
 				hostname := u.Hostname()
-				//			log.Printf("URL: %v", reference.BaseURL)
 				service := strings.SplitN(hostname, ".", 2)[0]
 				pingURLs[service] = reference.BaseURL + entry.Route
-				log.Printf("URL: %v", pingURLs[service])
-				//loop through entries to get the status
-
 				break
 			}
 		}
 	}
-	return nil
+	return
 }
 
 func objectFromJsonURL(urlReturningJSON string, object interface{}) (err error) {
-	//log.Printf("Reading from %v", urlReturningJSON)
 	resp, err := http.Get(urlReturningJSON)
 	if err != nil {
 		return err
@@ -126,12 +215,29 @@ outer:
 	return nil
 }
 
+func respbody(service string) error {
+	var servstat PingResponse
+	err := objectFromJsonURL(pingURLs[service], &servstat)
+	if err != nil {
+		return err
+	}
+	if servstat.Alive == true {
+		living := "Alive"
+		fmt.Printf("%v : %v\n", service, living)
+	}
+
+	return nil
+}
+
 func status(cmd *cobra.Command, args []string) error {
-	//	if (len)args==0{
-	//.....
-	//	}
+	if len(args) == 0 {
+		args = validArgs
+	}
 	for _, service := range args {
-		fmt.Printf("%v status: %v\n", service, "running")
+		err := respbody(service)
+		if err != nil {
+			panic(err)
+		}
 	}
 	return nil
 }
