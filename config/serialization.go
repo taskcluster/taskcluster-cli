@@ -16,7 +16,7 @@ import (
 )
 
 // configFile is the location of the configuration file
-func configFile() io.Reader {
+func configFile() (io.Reader, string) {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
 	if configFolder == "" {
 		homeFolder := os.Getenv("HOME")
@@ -27,8 +27,8 @@ func configFile() io.Reader {
 			configFolder = filepath.Join(homeFolder, ".config")
 		}
 	}
-	returnConfigLoc := filepath.Join(configFolder, "taskcluster.yml")
-	return strings.NewReader(returnConfigLoc)
+	configFileStringString := filepath.Join(configFolder, "taskcluster.yml")
+	return strings.NewReader(configFileStringString), configFileStringString
 }
 
 // Load will load confiration file, and initialize a default configuration
@@ -36,18 +36,21 @@ func configFile() io.Reader {
 // file is present, but we are unable to parse it.
 // TODO	we could simplify this function and only go through the definitions once
 //		and what happens if a value is tied to an env var AND to the config file?
-func Load(configFileLocation io.Reader) (map[string]map[string]interface{}, error) {
+func Load(configFileReader io.Reader) (map[string]map[string]interface{}, error) {
 	config := make(map[string]map[string]interface{})
 
 	// Read config file and unmarshal into config overwriting default values
 	// if ioutil.ReadFile returns an error, it means the config file couldn't
 	// be found and we just skip
-	configFile := readerToString(configFileLocation)
-	if data, err := ioutil.ReadFile(configFile); err == nil {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(configFileReader)
+	configFileString := buf.String()
+	if data, err := ioutil.ReadAll(configFileReader); err == nil {
 		if err = yaml.Unmarshal(data, &config); err != nil {
+			
 			return nil, fmt.Errorf(
 				"read config file %s, but failed to parse YAML, error: %s",
-				configFile, err,
+				configFileString, err,
 			)
 		}
 	}
@@ -173,16 +176,10 @@ func Save(config map[string]map[string]interface{}) error {
 	}
 
 	// Write config file
-	configFile := readerToString(configFile())
+	_ ,configFile := configFile()
 	if err = ioutil.WriteFile(configFile, data, 0664); err != nil {
 		return fmt.Errorf("Failed to write config file: %s, error: %s", configFile, err)
 	}
 
 	return nil
-}
-
-func readerToString(reader io.Reader) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(reader)
-	return buf.String()
 }
