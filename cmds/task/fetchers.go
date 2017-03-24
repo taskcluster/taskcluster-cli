@@ -12,9 +12,20 @@ import (
 	"github.com/taskcluster/taskcluster-client-go/queue"
 )
 
+// allow overriding the base URL for testing
+var queueBaseURL string
+
+func makeQueue(credentials *tcclient.Credentials) *queue.Queue {
+	q := queue.New(credentials)
+	if queueBaseURL != "" {
+		q.BaseURL = queueBaseURL
+	}
+	return q
+}
+
 // runStatus gets the status of run(s) of a given task.
 func runStatus(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
-	q := queue.New(credentials)
+	q := makeQueue(credentials)
 	taskID := args[0]
 
 	s, err := q.Status(taskID)
@@ -49,7 +60,7 @@ func runStatus(credentials *tcclient.Credentials, args []string, out io.Writer, 
 
 // runName gets the name of a given task.
 func runName(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
-	q := queue.New(credentials)
+	q := makeQueue(credentials)
 	taskID := args[0]
 
 	t, err := q.Task(taskID)
@@ -63,7 +74,7 @@ func runName(credentials *tcclient.Credentials, args []string, out io.Writer, _ 
 
 // runGroup gets the groupID of a given task.
 func runGroup(credentials *tcclient.Credentials, args []string, out io.Writer, _ *pflag.FlagSet) error {
-	q := queue.New(credentials)
+	q := makeQueue(credentials)
 	taskID := args[0]
 
 	t, err := q.Task(taskID)
@@ -77,7 +88,7 @@ func runGroup(credentials *tcclient.Credentials, args []string, out io.Writer, _
 
 // runArtifacts gets the name of the artificats for a given task and run.
 func runArtifacts(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
-	q := queue.New(credentials)
+	q := makeQueue(credentials)
 	taskID := args[0]
 
 	s, err := q.Status(taskID)
@@ -116,7 +127,18 @@ func runArtifacts(credentials *tcclient.Credentials, args []string, out io.Write
 }
 
 func runLog(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
+	q := makeQueue(credentials)
 	taskID := args[0]
+
+	s, err := q.Status(taskID)
+	if err != nil {
+		return fmt.Errorf("could not get the status of the task %s: %v", taskID, err)
+	}
+
+	state := s.Status.State
+	if state == "unscheduled" || state == "pending" {
+		return fmt.Errorf("could not fetch the logs of task %s because it's in a %s state", taskID, state)
+	}
 
 	path := "https://queue.taskcluster.net/v1/task/" + taskID + "/artifacts/public/logs/live.log"
 
@@ -127,10 +149,9 @@ func runLog(credentials *tcclient.Credentials, args []string, out io.Writer, fla
 	defer resp.Body.Close()
 
 	// Read line by line for live logs.
-	// This will also print the error message for failed requests.
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		fmt.Fprintln(out, scanner.Text())
 	}
 
 	if resp.StatusCode/100 != 2 {

@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/taskcluster/taskcluster-cli/config"
-	"github.com/taskcluster/taskcluster-cli/root"
+	"github.com/taskcluster/taskcluster-cli/cmds/root"
 )
 
 func main() {
@@ -13,8 +13,8 @@ func main() {
 
 	// gentlemen, START YOUR ENGINES
 	if err := root.Command.Execute(); err != nil {
-		os.Exit(0)
-	} else {
 		os.Exit(1)
+	} else {
+		os.Exit(0)
 	}
 }

@@ -1,7 +1,7 @@
 version: 0
 metadata:
-  name: "TaskCluster GitHub Tests"
-  description: "All non-integration tests for taskcluster github"
+  name: "TaskCluster .taskcluster.yml file"
+  description: "Tasks for taskcluster-cli"
   owner: "{{ event.head.user.email }}"
   source: "{{ event.head.repo.url }}"
 tasks:
@@ -21,7 +21,7 @@ tasks:
         - /bin/bash
         - '-c'
         - >-
-          go get -t github.com/taskcluster/taskcluster-cli/... 
+          go get -t github.com/taskcluster/taskcluster-cli
           && cd  /go/src/github.com/taskcluster/taskcluster-cli 
           && git fetch {{ event.head.repo.url }} {{ event.head.ref }} 
           && git checkout {{ event.head.sha }} 
@@ -30,11 +30,44 @@ tasks:
           && go get -u github.com/alecthomas/gometalinter 
           && gometalinter --install --force
           && go install ./...
-          && gometalinter --vendor --disable-all --enable=gotype --enable=golint 
+          && gometalinter --vendor --disable-all --deadline 5m
+          --enable=gotype --enable=golint 
           --enable=deadcode --enable=staticcheck --enable=misspell
-          --enable=vet --enable=vetshadow --enable=gosimple --skip=apis ./...
+          --enable=vet --enable=vetshadow --enable=gosimple
+          --skip=apis --skip=vendor ./...
+      artifacts:
+        public/taskcluster-linux:
+          path: /go/src/github.com/taskcluster/taskcluster-cli/taskcluster
+          type: file
     metadata:
-      name: "TaskCluster .taskcluster.yml file"
+      name: "TaskCluster GitHub Tests"
       description: "All non-integration tests"
+      owner: "{{ event.head.user.email }}"
+      source: "{{ event.head.repo.url }}"
+  - provisionerId: "{{ taskcluster.docker.provisionerId }}"
+    workerType: "{{ taskcluster.docker.workerType }}"
+    extra:
+      github:
+        env: true
+        events:
+          # TODO: tag - https://bugzilla.mozilla.org/show_bug.cgi?id=1344912
+          - release
+    payload:
+      maxRunTime: 3600
+      image: 'golang:1.8'
+      features:
+          taskclusterProxy: true
+      command:
+        - /bin/bash
+        - '-c'
+        - >-
+          go get -t github.com/taskcluster/taskcluster-cli/...
+          && cd  /go/src/github.com/taskcluster/taskcluster-cli
+          && git fetch {{ event.head.repo.url }} {{ event.version }}
+          && git checkout FETCH_HEAD
+          && make upload
+    metadata:
+      name: "Build and upload a binary for release"
+      description: "Binary release"
       owner: "{{ event.head.user.email }}"
       source: "{{ event.head.repo.url }}"
