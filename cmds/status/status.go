@@ -3,18 +3,17 @@ package status
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/taskcluster/taskcluster-cli/root"
+	"github.com/taskcluster/taskcluster-cli/cmds/root"
 
+	"github.com/shibukawa/configdir"
 	"github.com/spf13/cobra"
 )
 
@@ -23,9 +22,10 @@ const (
 )
 
 var (
-	pingURLs  PingURLs
-	validArgs []string
-	cacheFile = CacheFilePath()
+	pingURLs          PingURLs
+	validArgs         []string
+	cache             = Cache()
+	pingURLsCachePath = filepath.Join("cmds", "status", "pingURLs.json")
 )
 
 type (
@@ -53,16 +53,10 @@ type (
 )
 
 // CacheFilePath returns the file system path to the cache file storing the ping URLs
-func CacheFilePath() string {
-	// 1. find out where home directory is (panic in case of error)
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	home := usr.HomeDir
-
-	// 2. return file path <home directory>/ .taskcluster-cli/ cmds/ status / cache.json
-	return filepath.Join(home, ".taskcluster-cli", "cmds", "status", "cache.json")
+func Cache() (cache *configdir.Config) {
+	configDirs := configdir.New("taskcluster", "taskcluster-cli")
+	cache = configDirs.QueryCacheFolder()
+	return
 }
 
 func init() {
@@ -71,6 +65,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 	validArgs = make([]string, len(pingURLs))
 	i := 0
 	for k := range pingURLs {
@@ -103,15 +98,15 @@ services included in the status report.`,
 // concerned about whether these URLs are retrieved from a local cache, or from
 // querying web services.
 func NewPingURLs() (pingURLs PingURLs, err error) {
-	if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
-		return RefreshCache(manifestURL, cacheFile)
+	if !cache.Exists(pingURLsCachePath) {
+		return RefreshCache(manifestURL, cache, pingURLsCachePath)
 	}
-	cachedURLs, err := ReadCachedURLsFile(cacheFile)
+	cachedURLs, err := ReadCachedURLsFile(cache, pingURLsCachePath)
 	if err != nil {
 		return
 	}
 	if cachedURLs.Expired(time.Hour * 24) {
-		return RefreshCache(manifestURL, cacheFile)
+		return RefreshCache(manifestURL, cache, pingURLsCachePath)
 	}
 	pingURLs = cachedURLs.PingURLs
 	return
@@ -119,21 +114,20 @@ func NewPingURLs() (pingURLs PingURLs, err error) {
 
 // RefreshCache will scrape the manifest url for a dictionary of taskcluster
 // services, and cache the results in file at path.
-func RefreshCache(manifestURL, path string) (pingURLs PingURLs, err error) {
+func RefreshCache(manifestURL string, cache *configdir.Config, cachePath string) (pingURLs PingURLs, err error) {
 	pingURLs, err = ScrapePingURLs(manifestURL)
 	if err != nil {
 		return
 	}
-	cachedURLs, err := pingURLs.Cache(path)
+	cachedURLs, err := pingURLs.Cache(cache, cachePath)
 	return cachedURLs.PingURLs, err
 }
 
 // ReadCachedURLsFile returns a *CachedURLs based on the contents of the file
 // with the given path.
-func ReadCachedURLsFile(path string) (cachedURLs *CachedURLs, err error) {
-	color.Blue("Reading cache file %v", path)
+func ReadCachedURLsFile(cache *configdir.Config, cachePath string) (cachedURLs *CachedURLs, err error) {
 	var cachedURLsBytes []byte
-	cachedURLsBytes, err = ioutil.ReadFile(path)
+	cachedURLsBytes, err = cache.ReadFile(cachePath)
 	if err != nil {
 		return
 	}
@@ -144,13 +138,18 @@ func ReadCachedURLsFile(path string) (cachedURLs *CachedURLs, err error) {
 // Cache writes the pingURLs p to a file at path (replacing if it exists
 // already, and creating parent folders, if required), using the current time
 // for the retrieval timestamp.
-func (p PingURLs) Cache(path string) (cachedURLs *CachedURLs, err error) {
-	color.Magenta("Writing cache file %v", path)
-	parentDir := filepath.Dir(path)
+func (p PingURLs) Cache(cache *configdir.Config, cachePath string) (cachedURLs *CachedURLs, err error) {
+	color.Magenta("Writing cache file %v", filepath.Join(cache.Path, cachePath))
+
+	///////////////////////////////////////////////////////////////////////
+	// workaround until https://github.com/shibukawa/configdir/pull/2 lands
+	parentDir := filepath.Dir(filepath.Join(cache.Path, cachePath))
 	err = os.MkdirAll(parentDir, 0755)
 	if err != nil {
 		return
 	}
+	///////////////////////////////////////////////////////////////////////
+
 	cachedURLs = &CachedURLs{
 		LastUpdated: time.Now(),
 		PingURLs:    p,
@@ -160,7 +159,7 @@ func (p PingURLs) Cache(path string) (cachedURLs *CachedURLs, err error) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(cacheFile, bytes, 0644)
+	err = cache.WriteFile(cachePath, bytes)
 	return
 }
 

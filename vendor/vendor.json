@@ -71,6 +71,12 @@
 			"revisionTime": "2016-01-10T10:55:54Z"
 		},
 		{
+			"checksumSHA1": "uPCqYCT45y5/tdWgMJgShUTJ+y0=",
+			"path": "github.com/shibukawa/configdir",
+			"revision": "f5173a2c50e0358987cec35dfca337496f88f8bf",
+			"revisionTime": "2016-03-31T01:34:44Z"
+		},
+		{
 			"checksumSHA1": "lU+gVOtSFnBKx11uhPL8b9v0uTE=",
 			"path": "github.com/spf13/cobra",
 			"revision": "7be4beda01ec05d0b93d80b3facd2b6f44080d94",
@@ -124,7 +130,7 @@
 			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
 			"revisionTime": "2017-01-30T11:31:45Z"
 		},
-        {
+		{
 			"checksumSHA1": "tQJiIYU7lIwPhpJjddDXiFkDsZ8=",
 			"path": "github.com/taskcluster/go-got",
 			"revision": "be30a15e825169a70a00fcea97f7f6a611145c1e",
