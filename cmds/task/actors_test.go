@@ -1,9 +1,17 @@
 package task
 
 import (
+<<<<<<< HEAD
 	"io"
 	"net/http"
 
+=======
+	"bytes"
+	"io"
+	"net/http"
+
+	"github.com/spf13/cobra"
+>>>>>>> master
 	tcclient "github.com/taskcluster/taskcluster-client-go"
 )
 
