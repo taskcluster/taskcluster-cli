@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,14 +8,24 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
 	yaml "gopkg.in/yaml.v2"
 )
 
+
+/*
+TODO
+1. Return configFile to original, with string return, tben  
+2. Access reader and writer functionability with new variables:
+var (
+    configReader = os.Open(configFile())
+    configWriter = os.Create(configFile())
+)
+*/
+
 // configFile is the location of the configuration file
-func configFile() (io.Reader, string) {
+func configFile() io.ReadWriteCloser {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
 	if configFolder == "" {
 		homeFolder := os.Getenv("HOME")
@@ -27,8 +36,8 @@ func configFile() (io.Reader, string) {
 			configFolder = filepath.Join(homeFolder, ".config")
 		}
 	}
-	configFileStringString := filepath.Join(configFolder, "taskcluster.yml")
-	return strings.NewReader(configFileStringString), configFileStringString
+	ret,_ := os.Open(filepath.Join(configFolder, "taskcluster.yml"))
+	return ret
 }
 
 // Load will load confiration file, and initialize a default configuration
@@ -42,15 +51,12 @@ func Load(configFileReader io.Reader) (map[string]map[string]interface{}, error)
 	// Read config file and unmarshal into config overwriting default values
 	// if ioutil.ReadFile returns an error, it means the config file couldn't
 	// be found and we just skip
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(configFileReader)
-	configFileString := buf.String()
 	if data, err := ioutil.ReadAll(configFileReader); err == nil {
 		if err = yaml.Unmarshal(data, &config); err != nil {
 			
 			return nil, fmt.Errorf(
 				"read config file %s, but failed to parse YAML, error: %s",
-				configFileString, err,
+				data, err,
 			)
 		}
 	}
@@ -136,7 +142,7 @@ func Load(configFileReader io.Reader) (map[string]map[string]interface{}, error)
 }
 
 // Save will save configuration.
-func Save(config map[string]map[string]interface{}) error {
+func Save(config map[string]map[string]interface{}, configFileWriter io.Writer) error {
 	result := make(map[string]map[string]interface{})
 
 	// go over new object
@@ -174,12 +180,10 @@ func Save(config map[string]map[string]interface{}) error {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to serialize configFile, error: %s", err))
 	}
-
 	// Write config file
-	_ ,configFile := configFile()
-	if err = ioutil.WriteFile(configFile, data, 0664); err != nil {
-		return fmt.Errorf("Failed to write config file: %s, error: %s", configFile, err)
+	configLoc := fmt.Sprint(configFileWriter) // This is not right, though it compiles
+	if _, err := configFileWriter.Write(data); err != nil {
+		return fmt.Errorf("Failed to write config file: %s, error: %s", configLoc , err)
 	}
-
 	return nil
 }
