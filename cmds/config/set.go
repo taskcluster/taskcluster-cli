@@ -64,11 +64,17 @@ func cmdSet(cmd *cobra.Command, args []string) error {
 	// Save option
 	if dry, _ := cmd.Flags().GetBool("dry-run"); !dry {
 		config.Configuration[command][option] = value
-		if err := config.Save(config.Configuration); err != nil {
+		var file *os.File
+		var err error
+		if file, err = config.ConfigFile(os.O_WRONLY); err != nil{
+			fmt.Fprintf(os.Stderr, "failed to open configuration file, error: %s\n", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		if err := config.Save(config.Configuration, file); err != nil {
 			return fmt.Errorf("failed to save configuration file, error: %s", err)
 		}
 	}
-
 	fmt.Fprintf(cmd.OutOrStdout(), "Set '%s.%s' = %s\n", command, option, data)
 
 	return nil

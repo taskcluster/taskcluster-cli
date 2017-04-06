@@ -1,7 +1,7 @@
 package config
 
 import (
-    "os"
+    "bytes"
 	"strings"
 	"testing"
 
@@ -11,10 +11,9 @@ import (
 func TestLoadAndSave(t *testing.T) {
   
     // Create tester config data and option definitions
-    const configSample = `
-                          cmd:
-                            foo: bar
-                         `
+    const configSample = `cmd:
+  foo: bar
+`
     options := map[string]OptionDefinition{
        "foo": OptionDefinition{},
     }
@@ -34,12 +33,9 @@ func TestLoadAndSave(t *testing.T) {
     assert.True(t, ok)
 
     // Test Save() with results from Load()
-    configWriter,_ := os.Create(configSample)
-    err = Save(configMap, configWriter)
-    assert.NoError(t,err)
-
-    // assert.Equal(configSampleReader, fileIJustMade) 
-
-    //TODO Remove the saved file after we've tested 
-    // Separate out Save and Load testing
+    b := new(bytes.Buffer)
+    err = Save(configMap, b)
+    assert.NoError(t, err)
+    result := b.String()
+    assert.Equal(t, result, configSample) 
 }

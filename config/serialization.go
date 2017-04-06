@@ -19,13 +19,13 @@ TODO
 1. Return configFile to original, with string return, tben  
 2. Access reader and writer functionability with new variables:
 var (
-    configReader = os.Open(configFile())
-    configWriter = os.Create(configFile())
+    configReader = os.Open(ConfigFile())
+    configWriter = os.Create(ConfigFile())
 )
 */
 
 // configFile is the location of the configuration file
-func configFile() io.ReadWriteCloser {
+func ConfigFile(flag int) (*os.File, error) {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
 	if configFolder == "" {
 		homeFolder := os.Getenv("HOME")
@@ -36,8 +36,7 @@ func configFile() io.ReadWriteCloser {
 			configFolder = filepath.Join(homeFolder, ".config")
 		}
 	}
-	ret,_ := os.Open(filepath.Join(configFolder, "taskcluster.yml"))
-	return ret
+	return os.OpenFile(filepath.Join(configFolder, "taskcluster.yml"), flag, 0664)
 }
 
 // Load will load confiration file, and initialize a default configuration
