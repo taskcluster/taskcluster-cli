@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -68,7 +69,15 @@ func cmdSignin(cmd *cobra.Command, _ []string) error {
 		config.Configuration["config"]["accessToken"] = qs.Get("accessToken")
 		config.Configuration["config"]["certificate"] = qs.Get("certificate")
 
-		serr = config.Save(config.Configuration)
+		var file *os.File
+		var err error
+		if file, err = config.ConfigFile(os.O_WRONLY); err != nil{
+			fmt.Fprintf(os.Stderr, "failed to open configuration file, error: %s\n", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+
+		serr = config.Save(config.Configuration, file)
 		if serr == nil {
 			fmt.Fprintln(cmd.OutOrStdout(), "Credentials saved in configuration file.")
 		}

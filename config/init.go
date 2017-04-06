@@ -26,7 +26,13 @@ func Setup() {
 	var err error
 
 	// load configuration
-	Configuration, err = Load(configFile())
+	var file *os.File
+	if file, err = ConfigFile(os.O_RDONLY); err != nil{
+		fmt.Fprintf(os.Stderr, "failed to open configuration file, error: %s\n", err)
+		os.Exit(1)
+	}
+	Configuration, err = Load(file)
+	file.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration file, error: %s\n", err)
 		os.Exit(1)
