@@ -31,7 +31,7 @@ tasks:
           && gometalinter --install --force
           && go install ./...
           && gometalinter --vendor --disable-all --deadline 5m
-          --enable=gotype --enable=golint
+          --enable=golint
           --enable=deadcode --enable=staticcheck --enable=misspell
           --enable=vet --enable=vetshadow --enable=gosimple
           --skip=apis --skip=vendor ./...
