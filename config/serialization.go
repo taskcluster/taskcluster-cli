@@ -13,17 +13,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-
-/*
-TODO
-1. Return configFile to original, with string return, tben  
-2. Access reader and writer functionability with new variables:
-var (
-    configReader = os.Open(ConfigFile())
-    configWriter = os.Create(ConfigFile())
-)
-*/
-
 // configFile is the location of the configuration file
 func ConfigFile(flag int) (*os.File, error) {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
@@ -180,7 +169,7 @@ func Save(config map[string]map[string]interface{}, configFileWriter io.Writer) 
 		panic(fmt.Sprintf("Failed to serialize configFile, error: %s", err))
 	}
 	// Write config file
-	configLoc := fmt.Sprint(configFileWriter) // This is not right, though it compiles
+	configLoc := fmt.Sprint(configFileWriter)
 	if _, err := configFileWriter.Write(data); err != nil {
 		return fmt.Errorf("Failed to write config file: %s, error: %s", configLoc , err)
 	}
