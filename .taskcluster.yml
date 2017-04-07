@@ -27,14 +27,7 @@ tasks:
           && git init
           && git fetch {{ event.head.repo.url }} {{ event.head.ref }}
           && git checkout {{ event.head.sha }}
-          && go get -u github.com/alecthomas/gometalinter
-          && gometalinter --install --force
-          && go install ./...
-          && gometalinter --vendor --disable-all --deadline 5m
-          --enable=golint
-          --enable=deadcode --enable=staticcheck --enable=misspell
-          --enable=vet --enable=vetshadow --enable=gosimple
-          --skip=apis --skip=vendor ./...
+          && make lint
     metadata:
       name: "TaskCluster GitHub Lint Checks"
       description: "All non-integration tests"
@@ -62,8 +55,7 @@ tasks:
           && git init
           && git fetch {{ event.head.repo.url }} {{ event.head.ref }}
           && git checkout {{ event.head.sha }}
-          && make
-          && go test -v -race ./...
+          && make test
       artifacts:
         public/taskcluster-linux:
           path: /go/src/github.com/taskcluster/taskcluster-cli/taskcluster
