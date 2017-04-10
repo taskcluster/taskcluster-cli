@@ -16,6 +16,8 @@ tasks:
           - pull_request.synchronize
           - pull_request.reopened
           - push
+        branches:
+          - master
     payload:
       maxRunTime: 3600
       image: 'golang:1.8'
@@ -44,6 +46,9 @@ tasks:
           - pull_request.opened
           - pull_request.synchronize
           - pull_request.reopened
+          - push
+        branches:
+          - master
     payload:
       maxRunTime: 3600
       image: 'golang:1.8'
