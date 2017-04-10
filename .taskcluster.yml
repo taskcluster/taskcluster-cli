@@ -80,6 +80,8 @@ tasks:
         events:
           # TODO: tag - https://bugzilla.mozilla.org/show_bug.cgi?id=1344912
           - release
+    scopes:
+      - auth:aws-s3:read-write:downloads-taskcluster-net/taskcluster-cli/
     payload:
       maxRunTime: 3600
       image: 'golang:1.8'
