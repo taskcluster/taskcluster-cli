@@ -21,8 +21,16 @@ or `--help` parameter to get a command's help information.
 To install, download the `taskcluster` binary for the latest release your
 platform, and run it!
 
- * [amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/amd64/taskcluster) (note: you must chmod +x the result)
+ * [darwin-amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/darwin-amd64/taskcluster)
+ * [freebsd-386](https://downloads.taskcluster.net/taskcluster-cli/latest/freebsd-386/taskcluster)
+ * [freebsd-amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/freebsd-amd64/taskcluster)
+ * [linux-386](https://downloads.taskcluster.net/taskcluster-cli/latest/linux-386/taskcluster)
+ * [linux-amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/linux-amd64/taskcluster)
+ * [openbsd-amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/openbsd-amd64/taskcluster)
+ * [windows-386](https://downloads.taskcluster.net/taskcluster-cli/latest/windows-386/taskcluster)
+ * [windows-amd64](https://downloads.taskcluster.net/taskcluster-cli/latest/windows-amd64/taskcluster)
 
+(note: for non-Windows platforms, you must chmod +x the result)
 
 ## Development
 
