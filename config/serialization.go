@@ -4,27 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"reflect"
 
-	homedir "github.com/mitchellh/go-homedir"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // configFile is the location of the configuration file
 func configFile() string {
-	configFolder := os.Getenv("XDG_CONFIG_HOME")
-	if configFolder == "" {
-		homeFolder := os.Getenv("HOME")
-		if homeFolder == "" {
-			homeFolder, _ = homedir.Dir()
-		}
-		if homeFolder != "" {
-			configFolder = filepath.Join(homeFolder, ".config")
-		}
+	u, err := user.Current()
+	if err != nil {
+		log.Fatalf("Cannot determine user home directory required for storing taskcluster-cli configuration file: %v", err)
 	}
-	return filepath.Join(configFolder, "taskcluster.yml")
+	return filepath.Join(u.HomeDir, "taskcluster.yml")
 }
 
 // Load will load confiration file, and initialize a default configuration
