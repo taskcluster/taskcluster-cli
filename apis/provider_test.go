@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
@@ -43,7 +44,8 @@ func TestCommandGeneration(t *testing.T) {
 	subCmd.SetOutput(buf)
 
 	// load config, we need this for baseURL
-	config.Setup()
+	r := strings.NewReader(" ")
+	config.Setup(r)
 
 	// execute command, server will receive request
 	cmd.SetArgs([]string{"test", "test"})

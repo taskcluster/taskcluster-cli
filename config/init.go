@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/taskcluster/taskcluster-cli/client"
@@ -22,11 +23,11 @@ var (
 // this was originally the init() function
 // but we want to make sure all other packages have been initialized
 // before calling them, which Load() does
-func Setup() {
+func Setup(r io.Reader) {
 	var err error
 
 	// load configuration
-	Configuration, err = Load()
+	Configuration, err = Load(r)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration file, error: %s\n", err)
 		os.Exit(1)

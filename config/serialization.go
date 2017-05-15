@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +14,7 @@ import (
 )
 
 // configFile is the location of the configuration file
-func configFile() string {
+func ConfigFile(flag int) (*os.File, error) {
 	configFolder := os.Getenv("XDG_CONFIG_HOME")
 	if configFolder == "" {
 		homeFolder := os.Getenv("HOME")
@@ -24,7 +25,7 @@ func configFile() string {
 			configFolder = filepath.Join(homeFolder, ".config")
 		}
 	}
-	return filepath.Join(configFolder, "taskcluster.yml")
+	return os.OpenFile(filepath.Join(configFolder, "taskcluster.yml"), flag, 0664)
 }
 
 // Load will load confiration file, and initialize a default configuration
@@ -32,18 +33,18 @@ func configFile() string {
 // file is present, but we are unable to parse it.
 // TODO	we could simplify this function and only go through the definitions once
 //		and what happens if a value is tied to an env var AND to the config file?
-func Load() (map[string]map[string]interface{}, error) {
+func Load(configFileReader io.Reader) (map[string]map[string]interface{}, error) {
 	config := make(map[string]map[string]interface{})
 
 	// Read config file and unmarshal into config overwriting default values
 	// if ioutil.ReadFile returns an error, it means the config file couldn't
 	// be found and we just skip
-	configFile := configFile()
-	if data, err := ioutil.ReadFile(configFile); err == nil {
+	if data, err := ioutil.ReadAll(configFileReader); err == nil {
 		if err = yaml.Unmarshal(data, &config); err != nil {
+			
 			return nil, fmt.Errorf(
 				"read config file %s, but failed to parse YAML, error: %s",
-				configFile, err,
+				data, err,
 			)
 		}
 	}
@@ -129,7 +130,7 @@ func Load() (map[string]map[string]interface{}, error) {
 }
 
 // Save will save configuration.
-func Save(config map[string]map[string]interface{}) error {
+func Save(config map[string]map[string]interface{}, configFileWriter io.Writer) error {
 	result := make(map[string]map[string]interface{})
 
 	// go over new object
@@ -167,12 +168,10 @@ func Save(config map[string]map[string]interface{}) error {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to serialize configFile, error: %s", err))
 	}
-
 	// Write config file
-	configFile := configFile()
-	if err = ioutil.WriteFile(configFile, data, 0664); err != nil {
-		return fmt.Errorf("Failed to write config file: %s, error: %s", configFile, err)
+	configLoc := fmt.Sprint(configFileWriter)
+	if _, err := configFileWriter.Write(data); err != nil {
+		return fmt.Errorf("Failed to write config file: %s, error: %s", configLoc , err)
 	}
-
 	return nil
 }

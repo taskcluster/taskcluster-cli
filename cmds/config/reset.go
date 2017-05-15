@@ -2,7 +2,8 @@ package configCmd
 
 import (
 	"fmt"
-
+	"os"
+	
 	"github.com/spf13/cobra"
 	"github.com/taskcluster/taskcluster-cli/config"
 )
@@ -42,7 +43,14 @@ func cmdReset(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save configuration
-	if err := config.Save(config.Configuration); err != nil {
+	var file *os.File
+	var err error
+	if file, err = config.ConfigFile(os.O_RDONLY); err != nil{
+		fmt.Fprintf(os.Stderr, "failed to open configuration file, error: %s\n", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	if err := config.Save(config.Configuration, file); err != nil {
 		return fmt.Errorf("failed to save configuration file, error: %s", err)
 	}
 
