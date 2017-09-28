@@ -2,11 +2,11 @@ package task
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"encoding/json"
 
 	"github.com/spf13/cobra"
 	assert "github.com/stretchr/testify/require"
@@ -26,19 +26,15 @@ func (suite *FakeServerSuite) SetupSuite() {
 	// set up a fake server that knows how to answer the `task()` method
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/task/"+fakeTaskID, taskHandler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/status", manifestHandler)
-	suite.testServer = httptest.NewServer(handler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/runs/"+fakeRunID+"/artifacts", artifactsHandler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/cancel", cancelHandler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/rerun", reRunHandler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/runs/"+fakeRunID+"/claim", claimTaskHandler)
-
 	handler.HandleFunc("/v1/task/"+fakeTaskID+"/runs/"+fakeRunID+"/completed", manifestHandler)
+
+	// setup the test server
+	suite.testServer = httptest.NewServer(handler)
 
 	// set the base URL the subcommands use to point to the fake server
 	queueBaseURL = suite.testServer.URL + "/v1"
@@ -202,5 +198,17 @@ func (suite *FakeServerSuite) TestStatusCommand() {
 	runStatus(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
 
 	suite.Equal(string(buf2.Bytes()), "Run #0: completed 'completed'\n")
+}
 
+func (suite *FakeServerSuite) TestAwaitCommand() {
+	_, cmd := setUpCommand()
+	args := []string{fakeTaskID}
+
+	// valid task
+	err := runAwait(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
+	suite.NoError(err, "Await should not throw an error")
+
+	// invalid task
+	err = runAwait(&tcclient.Credentials{}, []string{"invalid"}, cmd.OutOrStdout(), cmd.Flags())
+	suite.Error(err, "Await should not get a valid status back")
 }

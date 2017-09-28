@@ -60,6 +60,12 @@ func init() {
 			Short: "Streams the log until completion.",
 			RunE:  executeHelperE(runLog),
 		},
+		// await
+		&cobra.Command{
+			Use:   "await <taskId>",
+			Short: "Watches the task and only returns on completion.",
+			RunE:  executeHelperE(runAwait),
+		},
 	)
 
 	// Commands that take actions

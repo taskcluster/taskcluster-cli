@@ -3,10 +3,11 @@ package task
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"encoding/json"
+	"time"
 
 	"github.com/spf13/pflag"
 	tcclient "github.com/taskcluster/taskcluster-client-go"
@@ -179,4 +180,24 @@ func runLog(credentials *tcclient.Credentials, args []string, out io.Writer, fla
 	}
 
 	return nil
+}
+
+// runAwait gets the status of run(s) of a given task.
+func runAwait(credentials *tcclient.Credentials, args []string, out io.Writer, flagSet *pflag.FlagSet) error {
+	q := makeQueue(credentials)
+	taskID := args[0]
+
+	for {
+		s, err := q.Status(taskID)
+		if err != nil {
+			return fmt.Errorf("could not get the status of the task %s: %v", taskID, err)
+		}
+
+		switch s.Status.State {
+		case "completed", "failed", "exception":
+			return nil
+		default:
+			time.Sleep(60 * time.Second)
+		}
+	}
 }
