@@ -187,6 +187,11 @@ func runAwait(credentials *tcclient.Credentials, args []string, out io.Writer, f
 	q := makeQueue(credentials)
 	taskID := args[0]
 
+	delay, _ := flagSet.GetInt("sleep")
+
+	fmt.Fprintf(out, "Waiting for completion of task %s\n", taskID)
+	fmt.Fprintf(out, "Checking every %v seconds\n", delay)
+
 	for {
 		s, err := q.Status(taskID)
 		if err != nil {
@@ -195,9 +200,10 @@ func runAwait(credentials *tcclient.Credentials, args []string, out io.Writer, f
 
 		switch s.Status.State {
 		case "completed", "failed", "exception":
+			fmt.Fprintln(out, getRunStatusString(s.Status.Runs[len(s.Status.Runs)-1].State, s.Status.Runs[len(s.Status.Runs)-1].ReasonResolved))
 			return nil
 		default:
-			time.Sleep(60 * time.Second)
+			time.Sleep(time.Duration(delay) * time.Second)
 		}
 	}
 }
