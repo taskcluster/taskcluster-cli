@@ -113,10 +113,9 @@ func TestFromNowValid(t *testing.T) {
 
 	output := buf.String()
 	output = output[0 : len(output)-1]
-	match := RegexpTimestamp.MatchString(output)
 
 	assert.NoError(err, "error when given a valid input")
-	assert.True(match, "the command did not return a valid timestamp")
+	assert.Regexp(RegexpTimestamp, output, "the command did not return a valid timestamp")
 }
 
 // TestFromNowSplitValid tests a valid call of the cobra command.
@@ -129,8 +128,7 @@ func TestFromNowSplitValid(t *testing.T) {
 
 	output := buf.String()
 	output = output[0 : len(output)-1]
-	match := RegexpTimestamp.MatchString(output)
 
 	assert.NoError(err, "error when given a valid input")
-	assert.True(match, "the command did not return a valid timestamp")
+	assert.Regexp(RegexpTimestamp, output, "the command did not return a valid timestamp")
 }

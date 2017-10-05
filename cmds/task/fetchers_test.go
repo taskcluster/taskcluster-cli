@@ -109,7 +109,7 @@ func (suite *FakeServerSuite) TestNameCommand() {
 	args := []string{fakeTaskID}
 	runName(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
 
-	suite.Equal(string(buf.Bytes()), "my-test\n")
+	suite.Equal("my-test\n", buf.String())
 }
 
 func (suite *FakeServerSuite) TestDefCommand() {
@@ -124,7 +124,7 @@ func (suite *FakeServerSuite) TestDefCommand() {
 	json.Unmarshal(buf.Bytes(), &f)
 	m := f.(map[string]interface{})
 	m = m["metadata"].(map[string]interface{})
-	suite.Equal(m["name"], "my-test")
+	suite.Equal("my-test", m["name"])
 }
 
 // Test the `task log` subcommand against a real task, since it does its own
@@ -150,7 +150,7 @@ func TestLogCommand(t *testing.T) {
 		"[taskcluster 2017-03-03 21:18:48.945Z] === Task Finished ===\n" +
 		"[taskcluster 2017-03-03 21:18:48.946Z] Successful task run with exit code: 0 completed in 14.001 seconds\n"
 
-	assert.Equal(string(buf.Bytes()), s, "Log's are not equal.")
+	assert.Equal(s, buf.String(), "Logs are not equal.")
 }
 
 func (suite *FakeServerSuite) TestArtifactsCommand() {
@@ -161,7 +161,7 @@ func (suite *FakeServerSuite) TestArtifactsCommand() {
 	args := []string{fakeTaskID}
 
 	runArtifacts(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
-	suite.Equal(string(buf.Bytes()), "fake_live.log\nfake_live_backing.log\n")
+	suite.Equal("fake_live.log\nfake_live_backing.log\n", buf.String())
 
 }
 
@@ -173,7 +173,7 @@ func (suite *FakeServerSuite) TestGroupCommand() {
 	args := []string{fakeTaskID}
 	runGroup(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
 
-	suite.Equal(string(buf.Bytes()), "my-test\n")
+	suite.Equal("my-test\n", buf.String())
 }
 
 func (suite *FakeServerSuite) TestStatusCommand() {
@@ -186,18 +186,17 @@ func (suite *FakeServerSuite) TestStatusCommand() {
 	cmd.Flags().IntP("run", "r", 0, "Specifies which run to consider.")
 	runStatus(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
 
-	suite.Equal(string(buf.Bytes()), "completed 'completed'\n")
+	suite.Equal("completed 'completed'\n", buf.String())
 
 	// Test all-runs flag
-	buf2 := &bytes.Buffer{}
-	cmd.SetOutput(buf2)
+	buf.Reset()
 
 	cmd.Flags().Set("run", "-1")
 	cmd.Flags().BoolP("all-runs", "a", true, "Specifies which run to consider.")
 
 	runStatus(&tcclient.Credentials{}, args, cmd.OutOrStdout(), cmd.Flags())
 
-	suite.Equal(string(buf2.Bytes()), "Run #0: completed 'completed'\n")
+	suite.Equal("Run #0: completed 'completed'\n", buf.String())
 }
 
 func (suite *FakeServerSuite) TestAwaitCommand() {

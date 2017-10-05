@@ -13,8 +13,8 @@ import (
 func TestStatusString(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.Equal(getRunStatusString("only", ""), "only")
-	assert.Equal(getRunStatusString("both", "here"), "both 'here'")
+	assert.Equal("only", getRunStatusString("only", ""))
+	assert.Equal("both 'here'", getRunStatusString("both", "here"))
 }
 
 func TestExecuteHelper(t *testing.T) {

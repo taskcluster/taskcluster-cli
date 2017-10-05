@@ -84,7 +84,7 @@ func TestValidDecode(t *testing.T) {
 	expected := "14e1fd98-8d26-4350-bdd3-2a0ca376a3b2\n"
 
 	assert.NoError(err, "Error decoding test slug.")
-	assert.Equal(buf.String(), expected, "Got wrong output when decoding slug.")
+	assert.Equal(expected, buf.String(), "Got wrong output when decoding slug.")
 }
 
 func TestInsufficientEncode(t *testing.T) {
@@ -115,5 +115,5 @@ func TestValidEncode(t *testing.T) {
 	expected := "FOH9mI0mQ1C90yoMo3ajsg\n"
 
 	assert.NoError(err, "Error encoding test uuid.")
-	assert.Equal(buf.String(), expected, "Got wrong output when encoding uuid.")
+	assert.Equal(expected, buf.String(), "Got wrong output when encoding uuid.")
 }
