@@ -23,6 +23,11 @@ var (
 		Short: "Get the name of the artifacts of a task.",
 		RunE:  executeHelperE(runArtifacts),
 	}
+	awaitCmd = &cobra.Command{
+		Use:   "await <taskId>",
+		Short: "Watches the task and only returns on completion.",
+		RunE:  executeHelperE(runAwait),
+	}
 )
 
 func init() {
@@ -30,6 +35,8 @@ func init() {
 	statusCmd.Flags().IntP("run", "r", -1, "Specifies which run to consider.")
 
 	artifactsCmd.Flags().IntP("run", "r", -1, "Specifies which run to consider.")
+
+	awaitCmd.Flags().IntP("sleep", "s", 60, "Specifies how long to sleep between checks.")
 
 	// Commands that fetch information
 	Command.AddCommand(
@@ -61,6 +68,8 @@ func init() {
 			Short: "Streams the log until completion.",
 			RunE:  executeHelperE(runLog),
 		},
+		// await
+		awaitCmd,
 	)
 
 	// Commands that take actions
