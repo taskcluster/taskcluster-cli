@@ -51,17 +51,24 @@ generate-apis:
 
 lint: prep
 	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install --force
-	go install ./...
-	gometalinter --vendor --disable-all --deadline 5m \
+	gometalinter --install
+	# not enabled: aligncheck, deadcode, dupl, errcheck, gas, gocyclo, structcheck, unused, varcheck
+	# Disabled: testify, test (these two show test errors, hence, they run tests)
+	# Disabled: gotype (same as go compiler, also it has issues and was recently removed)
+	gometalinter -j4 --deadline=30m --line-length=180 --vendor --vendored-linters --disable-all \
+		--enable=goconst \
+		--enable=gofmt \
+		--enable=goimports \
 		--enable=golint \
-		--enable=deadcode \
-		--enable=staticcheck \
+		--enable=gosimple \
+		--enable=ineffassign \
+		--enable=interfacer \
+		--enable=lll \
 		--enable=misspell \
+		--enable=staticcheck \
+		--enable=unconvert \
 		--enable=vet \
 		--enable=vetshadow \
-		--enable=gosimple \
-		--skip=apis --skip=vendor \
-		./...
+		--tests ./...
 
 .PHONY: all prep build clean upload release generate-apis
