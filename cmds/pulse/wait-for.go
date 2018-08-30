@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/taskcluster/taskcluster-cli/cmds/root"
-	"github.com/taskcluster/taskcluster-client-go/tcqueue"
+	"github.com/taskcluster/taskcluster-client-go/queue"
 
 	"github.com/spf13/cobra"
 
@@ -57,18 +57,18 @@ func waitForTask(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Error getting request: %v", err)
 	}
-	queue := tcqueue.New(nil)
+	q := queue.New(nil)
 	var pulseMessage map[string]interface{}
 
 	for {
 		event, ok := <-stream.Events
-		if ok == false {
+		if !ok {
 			err := <-stream.Errors
 			stream.Close()
 			return fmt.Errorf("Error: %v", err)
 		}
 		if event.Event() == "ready" {
-			status, err := queue.Status(args[0])
+			status, err := q.Status(args[0])
 			if err != nil {
 				return fmt.Errorf("Error: %v", err)
 			}
